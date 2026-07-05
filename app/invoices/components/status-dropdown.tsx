@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 export function StatusDropdown({ invoiceId, currentStatus }: { invoiceId: string; currentStatus: string }) {
   const [isPending, startTransition] = useTransition();
 
-  const handleStatusChange = (newStatus: string) => {
+  const handleStatusChange = (newStatus: string | null) => {
+    if (!newStatus) return;
     startTransition(async () => {
       const res = await updateInvoiceStatus(invoiceId, newStatus);
       if (res.error) {
