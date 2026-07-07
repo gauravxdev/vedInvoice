@@ -19,7 +19,7 @@ export function StatusDropdown({ invoiceId, currentStatus }: { invoiceId: string
   };
 
   return (
-    <Select defaultValue={currentStatus || "Pending"} onValueChange={handleStatusChange} disabled={isPending}>
+    <Select value={currentStatus || "Pending"} onValueChange={handleStatusChange} disabled={isPending}>
       <SelectTrigger className={`h-8 w-[100px] text-xs font-semibold ${
         currentStatus === 'Paid' ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
       } border-none`}>

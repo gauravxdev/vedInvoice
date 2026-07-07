@@ -4,12 +4,36 @@ import { db } from "@/lib/db";
 import { InvoiceFormValues } from "@/lib/schema";
 import { revalidatePath } from "next/cache";
 
+export async function getInvoiceById(id: string) {
+  try {
+    const invoice = await db.invoice.findUnique({
+      where: { id },
+      include: {
+        customer: true,
+        items: true,
+      }
+    });
+    return invoice;
+  } catch (error) {
+    console.error("Failed to fetch invoice:", error);
+    return null;
+  }
+}
+
 export async function createInvoice(data: InvoiceFormValues) {
   try {
-    const subtotal = data.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice * (1 - (item.discount || 0) / 100)), 0);
-    const tax = data.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice * (1 - (item.discount || 0) / 100)) * (item.tax / 100), 0);
-    const discountAmount = subtotal * (data.discount / 100);
-    const total = subtotal + tax - discountAmount;
+    const settings = await db.companySettings.findFirst();
+    const showTax = settings ? settings.showTax : true;
+    const subtotal = data.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+    const tax = showTax 
+      ? data.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice * (1 - (item.discount || 0) / 100)) * (item.tax / 100), 0)
+      : 0;
+      
+    const itemDiscounts = data.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice * ((item.discount || 0) / 100)), 0);
+    const globalDiscountAmount = (subtotal - itemDiscounts) * (data.discount / 100);
+    const totalDiscountAmount = itemDiscounts + globalDiscountAmount;
+    
+    const total = subtotal + tax - totalDiscountAmount;
 
     const primaryCustomerName = data.customerName || data.items[0]?.customerName || "Unknown Customer";
 
@@ -44,7 +68,7 @@ export async function createInvoice(data: InvoiceFormValues) {
         tax,
         total,
         notes: data.notes,
-        paymentStatus: "Pending",
+        paymentStatus: data.paymentStatus || "Pending",
         paymentMode: data.paymentMode,
         deliveryBy: data.deliveryBy,
         items: {
@@ -52,9 +76,10 @@ export async function createInvoice(data: InvoiceFormValues) {
             productName: item.productName,
             quantity: item.quantity,
             unitPrice: item.unitPrice,
-            total: item.quantity * item.unitPrice * (1 - (item.discount || 0) / 100),
+            total: item.quantity * item.unitPrice,
             customerName: item.customerName || data.customerName,
-            deliveryBy: item.deliveryBy || data.deliveryBy
+            deliveryBy: item.deliveryBy || data.deliveryBy,
+            paymentMode: item.paymentMode || data.paymentMode
           }))
         }
       }

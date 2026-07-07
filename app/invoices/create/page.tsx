@@ -29,12 +29,14 @@ export default function CreateInvoice() {
     companyLogo: null,
     companyAddress: "L-208, Dilshad Garden\nDelhi - 95",
     phone: "8826047824",
-    email: ""
+    email: "",
+    showTax: true,
+    taxRates: "0,5,10,20"
   });
 
   useEffect(() => {
     getCompanySettings().then((res) => {
-      if (res && res.id !== "new") {
+      if (res) {
         setCompanySettings(res);
       }
     });
@@ -77,6 +79,7 @@ export default function CreateInvoice() {
   };
 
   const calculateTax = () => {
+    if (companySettings?.showTax === false) return 0;
     return watchAll.items?.reduce((sum, item) => sum + (item.quantity * item.unitPrice * (1 - (Number(item.discount || 0) / 100)) * (item.tax / 100)), 0) || 0;
   };
 
@@ -103,7 +106,13 @@ export default function CreateInvoice() {
   const previewRef = useRef<HTMLDivElement>(null);
 
   const handleDownloadPDF = async () => {
+    const originalTitle = document.title;
+    const customer = watchAll.customerName || "Draft";
+    document.title = `Invoice_${customer.replace(/\s+/g, "_")}`;
     window.print();
+    setTimeout(() => {
+      document.title = originalTitle;
+    }, 100);
   };
 
   useEffect(() => {
@@ -189,7 +198,12 @@ export default function CreateInvoice() {
                       <Input {...form.register(`items.${index}.paymentMode` as const)} placeholder="e.g. Cash" />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 items-end">
+                  <div className={cn(
+                    "grid gap-3 items-end",
+                    companySettings?.showTax !== false
+                      ? "grid-cols-2 sm:grid-cols-4"
+                      : "grid-cols-2 sm:grid-cols-3"
+                  )}>
                     <div className="space-y-1">
                       <label className="text-xs font-medium text-neutral-500 ml-1">Price</label>
                       <Input type="number" {...form.register(`items.${index}.unitPrice` as const)} placeholder="0" />
@@ -198,29 +212,47 @@ export default function CreateInvoice() {
                       <label className="text-xs font-medium text-neutral-500 ml-1">Qty</label>
                       <Input type="number" {...form.register(`items.${index}.quantity` as const)} placeholder="1" />
                     </div>
-                    <div className="space-y-1">
-                      <label className="text-xs font-medium text-neutral-500 ml-1 whitespace-nowrap">Discount (%)</label>
-                      <Input type="number" {...form.register(`items.${index}.discount` as const)} placeholder="0" />
-                    </div>
-                    <div className="flex items-end gap-2">
-                      <div className="flex-1 space-y-1">
-                        <label className="text-xs font-medium text-neutral-500 ml-1">Tax</label>
-                        <Select onValueChange={(v) => form.setValue(`items.${index}.tax`, Number(v))} defaultValue="0">
-                          <SelectTrigger>
-                            <SelectValue placeholder="Tax" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="0">0%</SelectItem>
-                            <SelectItem value="5">5%</SelectItem>
-                            <SelectItem value="10">10%</SelectItem>
-                            <SelectItem value="20">20%</SelectItem>
-                          </SelectContent>
-                        </Select>
+                    {companySettings?.showTax !== false ? (
+                      <div className="space-y-1">
+                        <label className="text-xs font-medium text-neutral-500 ml-1 whitespace-nowrap">Discount (%)</label>
+                        <Input type="number" {...form.register(`items.${index}.discount` as const)} placeholder="0" />
                       </div>
-                      <Button type="button" variant="ghost" size="icon" className="text-red-500 hover:text-red-700 hover:bg-red-50 shrink-0 mb-0.5" onClick={() => remove(index)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    ) : (
+                      <div className="flex items-end gap-2">
+                        <div className="flex-1 space-y-1">
+                          <label className="text-xs font-medium text-neutral-500 ml-1 whitespace-nowrap">Discount (%)</label>
+                          <Input type="number" {...form.register(`items.${index}.discount` as const)} placeholder="0" />
+                        </div>
+                        <Button type="button" variant="ghost" size="icon" className="text-red-500 hover:text-red-700 hover:bg-red-50 shrink-0 mb-0.5" onClick={() => remove(index)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                    {companySettings?.showTax !== false && (
+                      <div className="flex items-end gap-2">
+                        <div className="flex-1 space-y-1">
+                          <label className="text-xs font-medium text-neutral-500 ml-1">Tax</label>
+                          <Select onValueChange={(v) => form.setValue(`items.${index}.tax`, Number(v))} defaultValue="0">
+                            <SelectTrigger>
+                              <SelectValue placeholder="Tax" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(companySettings?.taxRates || "0,5,10,20")
+                                .split(",")
+                                .filter(Boolean)
+                                .map((rate: string) => (
+                                  <SelectItem key={rate} value={rate}>
+                                    {rate}%
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <Button type="button" variant="ghost" size="icon" className="text-red-500 hover:text-red-700 hover:bg-red-50 shrink-0 mb-0.5" onClick={() => remove(index)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -237,6 +269,21 @@ export default function CreateInvoice() {
                 <div className="space-y-2">
                   <Label>Discount (%)</Label>
                   <Input type="number" {...form.register("discount")} placeholder="e.g. 10" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select
+                    value={form.watch("paymentStatus") || "Pending"}
+                    onValueChange={(value) => form.setValue("paymentStatus", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Pending">Pending</SelectItem>
+                      <SelectItem value="Paid">Paid</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <div className="space-y-2">
@@ -328,7 +375,7 @@ export default function CreateInvoice() {
                       <td className="border border-neutral-300 py-3 px-3 font-medium text-center">{item.productName || "-"}</td>
                       <td className="border border-neutral-300 py-3 px-3 text-center whitespace-nowrap">{item.quantity}</td>
                       <td className="border border-neutral-300 py-3 px-3 text-center whitespace-nowrap">₹{formatIndianCurrency(Number(item.unitPrice || 0))}</td>
-                      <td className="border border-neutral-300 py-3 px-3 text-center font-medium whitespace-nowrap">₹{formatIndianCurrency(Number(item.quantity || 0) * Number(item.unitPrice || 0) * (1 - (Number(item.discount || 0) / 100)))}</td>
+                      <td className="border border-neutral-300 py-3 px-3 text-center font-medium whitespace-nowrap">₹{formatIndianCurrency(Number(item.quantity || 0) * Number(item.unitPrice || 0))}</td>
                       <td className="border border-neutral-300 py-3 px-3 text-center">{item.deliveryBy || watchAll.deliveryBy || "-"}</td>
                       <td className="border border-neutral-300 py-3 px-3 text-center">{item.paymentMode || watchAll.paymentMode || "-"}</td>
                     </tr>
@@ -361,7 +408,7 @@ export default function CreateInvoice() {
                     <span>-₹{formatIndianCurrency(discountAmount)}</span>
                   </div>
                 )}
-                {tax > 0 && (
+                {companySettings?.showTax !== false && tax > 0 && (
                   <div className="flex justify-between text-neutral-500">
                     <span>Tax</span>
                     <span>₹{formatIndianCurrency(tax)}</span>

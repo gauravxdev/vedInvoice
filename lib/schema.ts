@@ -26,6 +26,7 @@ export const invoiceSchema = z.object({
   items: z.array(invoiceItemSchema).min(1, "At least one item is required"),
   notes: z.string().optional(),
   discount: z.coerce.number().min(0).max(100).default(0),
+  paymentStatus: z.string().default("Pending"),
 });
 
 export type InvoiceFormValues = z.infer<typeof invoiceSchema>;

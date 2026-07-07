@@ -1,20 +1,39 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { format } from "date-fns";
 import { Download, ArrowLeft, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatIndianCurrency } from "@/lib/utils";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 export default function InvoiceViewer({ invoice, companySettings }: { invoice: any, companySettings: any }) {
   const previewRef = useRef<HTMLDivElement>(null);
 
   const handleDownloadPDF = async () => {
+    if (window.location.pathname === '/invoices') {
+      window.open(`/invoices/${invoice.id}?print=true`, '_blank');
+      return;
+    }
+    const originalTitle = document.title;
+    document.title = invoice.invoiceNumber || "Invoice";
     window.print();
+    setTimeout(() => {
+      document.title = originalTitle;
+    }, 100);
   };
 
-  const discountAmount = 0; // If you added discount column to db, handle it here. Assuming 0 for now.
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    if (searchParams.get("print") === "true") {
+      setTimeout(() => {
+        handleDownloadPDF();
+      }, 500); // give it a moment to render
+    }
+  }, [searchParams]);
+
+  const discountAmount = Math.max(0, invoice.subtotal + invoice.tax - invoice.total);
 
   return (
     <div className="w-full max-w-4xl min-w-[700px] mx-auto flex flex-col pb-20 print:pb-0 print:mx-0 print:flex">
@@ -25,7 +44,7 @@ export default function InvoiceViewer({ invoice, companySettings }: { invoice: a
             Back to Invoices
           </Button>
         </Link>
-        <div className="flex gap-2">
+        <div className="flex gap-2 mr-8">
           <Button variant="default" size="sm" onClick={handleDownloadPDF} type="button">
             <Download className="mr-2 h-4 w-4" />
             Download PDF
@@ -33,7 +52,7 @@ export default function InvoiceViewer({ invoice, companySettings }: { invoice: a
         </div>
       </div>
 
-      <div className="w-full min-h-[1000px] print:min-h-[1000px] flex flex-col bg-white shadow-lg p-6 sm:p-10 print:shadow-none print:p-0 print:m-0 print:overflow-visible print:flex" ref={previewRef}>
+      <div className="w-full min-h-[1000px] print:min-h-[1000px] flex flex-col bg-white shadow-lg p-6 sm:p-10 print:shadow-none print:m-0 print:overflow-visible print:flex" ref={previewRef}>
         {/* Invoice Header */}
         <div className="flex justify-between items-start mb-12">
           <div className="flex flex-col gap-4">
@@ -119,10 +138,16 @@ export default function InvoiceViewer({ invoice, companySettings }: { invoice: a
               <span className="text-neutral-500">Sub total</span>
               <span>₹{formatIndianCurrency(invoice.subtotal)}</span>
             </div>
-            {invoice.tax > 0 && (
+            {companySettings?.showTax !== false && invoice.tax > 0 && (
               <div className="flex justify-between text-neutral-500">
                 <span>Tax</span>
                 <span>₹{formatIndianCurrency(invoice.tax)}</span>
+              </div>
+            )}
+            {discountAmount > 0 && (
+              <div className="flex justify-between text-neutral-500">
+                <span>Discount</span>
+                <span>-₹{formatIndianCurrency(discountAmount)}</span>
               </div>
             )}
             <div className="flex justify-between font-bold text-lg pt-3 border-t">

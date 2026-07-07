@@ -126,6 +126,96 @@ export default function SettingsForm({ initialData }: { initialData: any }) {
               <Input value={formData.companyAddress || ""} onChange={e => setFormData({...formData, companyAddress: e.target.value})} placeholder="e.g. L-208, Dilshad Garden, Delhi - 95" />
             </div>
 
+            {/* Tax Settings Section */}
+            <div className="space-y-4 pt-4 border-t">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="showTax"
+                  checked={formData.showTax ?? true}
+                  onChange={e => setFormData({...formData, showTax: e.target.checked})}
+                  className="h-4 w-4 rounded border-neutral-300 text-black focus:ring-black"
+                />
+                <Label htmlFor="showTax" className="cursor-pointer font-medium">Show Tax on Invoices & Products</Label>
+              </div>
+
+              {(formData.showTax ?? true) && (
+                <div className="space-y-3 pt-2">
+                  <Label>Manage Tax Options (%)</Label>
+                  <div className="grid gap-2 max-w-md">
+                    {(formData.taxRates || "0,5,10,20")
+                      .split(",")
+                      .filter(Boolean)
+                      .map((rate: string, idx: number) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            value={rate}
+                            onChange={(e) => {
+                              const newVal = e.target.value;
+                              const rates = (formData.taxRates || "0,5,10,20").split(",").filter(Boolean);
+                              rates[idx] = newVal;
+                              setFormData({ ...formData, taxRates: rates.join(",") });
+                            }}
+                            className="w-24"
+                          />
+                          <span className="text-sm text-neutral-500">%</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-500 hover:text-red-700"
+                            onClick={() => {
+                              const rates = (formData.taxRates || "0,5,10,20").split(",").filter(Boolean);
+                              rates.splice(idx, 1);
+                              setFormData({ ...formData, taxRates: rates.join(",") });
+                            }}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      ))}
+                  </div>
+
+                  <div className="flex gap-2 max-w-xs mt-2">
+                    <Input
+                      type="number"
+                      placeholder="Add new tax %"
+                      id="new-tax-rate"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const val = (e.currentTarget as HTMLInputElement).value;
+                          if (val !== "") {
+                            const rates = (formData.taxRates || "0,5,10,20").split(",").filter(Boolean);
+                            rates.push(val);
+                            setFormData({ ...formData, taxRates: rates.join(",") });
+                            (e.currentTarget as HTMLInputElement).value = "";
+                          }
+                        }
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        const input = document.getElementById("new-tax-rate") as HTMLInputElement;
+                        const val = input?.value;
+                        if (val && val !== "") {
+                          const rates = (formData.taxRates || "0,5,10,20").split(",").filter(Boolean);
+                          rates.push(val);
+                          setFormData({ ...formData, taxRates: rates.join(",") });
+                          input.value = "";
+                        }
+                      }}
+                    >
+                      Add
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {errorMsg && <div className="text-sm font-medium text-red-500 bg-red-50 p-3 rounded-md">{errorMsg}</div>}
             {successMsg && <div className="text-sm font-medium text-green-600 bg-green-50 p-3 rounded-md">{successMsg}</div>}
 

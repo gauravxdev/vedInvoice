@@ -58,4 +58,6 @@ model CompanySettings {
   gstNumber      String?
   phone          String?
   email          String?
+  showTax        Boolean @default(true)
+  taxRates       String  @default("0,5,10,20")
 }

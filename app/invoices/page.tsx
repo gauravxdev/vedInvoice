@@ -3,28 +3,69 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileText, Download } from "lucide-react";
+import { FileText, Download, CheckCircle2, Clock, Receipt } from "lucide-react";
 import Link from "next/link";
 import { formatIndianCurrency } from "@/lib/utils";
 import { StatusDropdown } from "./components/status-dropdown";
+import { InvoiceFilters } from "./components/invoice-filters";
+import { Pagination } from "./components/pagination";
+import { InvoiceActionButtons } from "./components/invoice-action-buttons";
 
-export default async function InvoicesPage() {
+export default async function InvoicesPage(props: {
+  searchParams?: Promise<{ query?: string; page?: string; date?: string }>;
+}) {
+  const searchParams = await props.searchParams;
+  const query = searchParams?.query || "";
+  const currentPage = Number(searchParams?.page) || 1;
+  const dateStr = searchParams?.date || "";
+  const itemsPerPage = 10;
+  
   let invoices: any[] = [];
   let dbError = false;
+  let totalInvoicesCount = 0;
+  let paidInvoicesCount = 0;
+  let pendingInvoicesCount = 0;
+  let totalFilteredPages = 0;
 
   try {
+    // 1. Fetch summary stats
+    const allInvoices = await db.invoice.findMany({
+      select: { paymentStatus: true }
+    });
+    totalInvoicesCount = allInvoices.length;
+    paidInvoicesCount = allInvoices.filter(i => i.paymentStatus === 'Paid').length;
+    pendingInvoicesCount = totalInvoicesCount - paidInvoicesCount;
+
+    // 2. Build where clause for filtering
+    const where: any = {};
+    if (query) {
+      where.invoiceNumber = {
+        contains: query,
+        mode: "insensitive"
+      };
+    }
+    if (dateStr) {
+      // Filter by invoiceDate within the specified date
+      const startDate = new Date(dateStr);
+      startDate.setHours(0, 0, 0, 0);
+      const endDate = new Date(dateStr);
+      endDate.setHours(23, 59, 59, 999);
+      where.invoiceDate = {
+        gte: startDate,
+        lte: endDate,
+      };
+    }
+
+    // 3. Get total count for pagination
+    const totalFiltered = await db.invoice.count({ where });
+    totalFilteredPages = Math.ceil(totalFiltered / itemsPerPage);
+
+    // 4. Fetch the paginated and filtered invoices
     invoices = await db.invoice.findMany({
+      where,
       orderBy: { createdAt: "desc" },
-      take: 100,
-      include: {
-        customer: true,
-        items: {
-          take: 1, // Get the first item to show on the dashboard
-        },
-        _count: {
-          select: { items: true },
-        },
-      },
+      skip: (currentPage - 1) * itemsPerPage,
+      take: itemsPerPage,
     });
   } catch (error) {
     dbError = true;
@@ -50,61 +91,90 @@ export default async function InvoicesPage() {
         </div>
       )}
 
+      {/* Summary Cards */}
+      <div className="grid gap-4 md:grid-cols-3 mb-8">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Invoices</CardTitle>
+            <Receipt className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalInvoicesCount}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Paid Invoices</CardTitle>
+            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{paidInvoicesCount}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pending Invoices</CardTitle>
+            <Clock className="h-4 w-4 text-amber-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{pendingInvoicesCount}</div>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle>All Invoices</CardTitle>
         </CardHeader>
         <CardContent>
+          <InvoiceFilters />
+          
           <div className="rounded-md border overflow-x-auto">
             <table className="w-full text-sm min-w-[800px]">
               <thead className="bg-neutral-50 border-b">
                 <tr>
-                  <th className="py-3 px-4 text-left font-medium">Sr no</th>
-                  <th className="py-3 px-4 text-left font-medium">Customer Name</th>
-                  <th className="py-3 px-4 text-left font-medium">Model No</th>
-                  <th className="py-3 px-4 text-left font-medium">Rate</th>
-                  <th className="py-3 px-4 text-left font-medium">Amount</th>
-                  <th className="py-3 px-4 text-left font-medium">Qty</th>
-                  <th className="py-3 px-4 text-left font-medium">Delivery By</th>
-                  <th className="py-3 px-4 text-left font-medium">Pay Mode</th>
+                  <th className="py-3 px-4 text-left font-medium">Invoice ID</th>
+                  <th className="py-3 px-4 text-left font-medium">Date & Time</th>
+                  <th className="py-3 px-4 text-left font-medium">Total Amount</th>
                   <th className="py-3 px-4 text-left font-medium">Status</th>
-                  <th className="py-3 px-4 text-left font-medium">Action</th>
+                  <th className="py-3 px-4 text-center font-medium w-[100px]">Preview</th>
+                  <th className="py-3 px-4 text-center font-medium w-[100px]">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {invoices.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="py-4 text-center text-muted-foreground">
+                    <td colSpan={5} className="py-4 text-center text-muted-foreground">
                       No invoices found.
                     </td>
                   </tr>
                 ) : (
-                  invoices.map((invoice, index) => (
+                  invoices.map((invoice) => (
                     <tr key={invoice.id}>
-                      <td className="py-3 px-4 font-medium text-center">{String(index + 1).padStart(3, '0')}</td>
-                      <td className="py-3 px-4">{invoice.customer.name}</td>
-                      <td className="py-3 px-4">{invoice.items[0]?.productName || "-"}</td>
-                      <td className="py-3 px-4">₹{invoice.items[0] ? formatIndianCurrency(invoice.items[0].unitPrice) : "0.00"}</td>
+                      <td className="py-3 px-4 font-medium">{invoice.invoiceNumber}</td>
+                      <td className="py-3 px-4">
+                        <div className="flex flex-col">
+                          <span>{format(new Date(invoice.invoiceDate), "MMM dd, yyyy")}</span>
+                          <span className="text-xs text-muted-foreground">{format(new Date(invoice.createdAt), "hh:mm a")}</span>
+                        </div>
+                      </td>
                       <td className="py-3 px-4 font-medium">₹{formatIndianCurrency(invoice.total)}</td>
-                      <td className="py-3 px-4">{invoice._count.items}</td>
-                      <td className="py-3 px-4">{invoice.deliveryBy || "-"}</td>
-                      <td className="py-3 px-4">{invoice.paymentMode || "-"}</td>
                       <td className="py-3 px-4">
                         <StatusDropdown invoiceId={invoice.id} currentStatus={invoice.paymentStatus} />
                       </td>
-                      <td className="py-3 px-4">
-                        <Link href={`/invoices/${invoice.id}`}>
-                          <Button variant="ghost" size="icon" title="View & Download PDF">
-                            <Download className="h-4 w-4" />
-                          </Button>
-                        </Link>
-                      </td>
+                      <InvoiceActionButtons invoiceId={invoice.id} />
                     </tr>
                   ))
                 )}
               </tbody>
             </table>
           </div>
+          
+          {totalFilteredPages > 1 && (
+            <div className="mt-4">
+              <Pagination totalPages={totalFilteredPages} />
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

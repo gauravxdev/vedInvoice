@@ -41,8 +41,6 @@ export default async function CustomersPage() {
               <thead className="bg-neutral-50 border-b">
                 <tr>
                   <th className="py-3 px-4 text-left font-medium">Name</th>
-                  <th className="py-3 px-4 text-left font-medium">Phone</th>
-                  <th className="py-3 px-4 text-left font-medium">Address</th>
                   <th className="py-3 px-4 text-left font-medium">Total Orders</th>
                   <th className="py-3 px-4 text-left font-medium">Total Revenue</th>
                   <th className="py-3 px-4 text-left font-medium">Last Invoice</th>
@@ -51,7 +49,7 @@ export default async function CustomersPage() {
               <tbody className="divide-y">
                 {customers.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-4 text-center text-muted-foreground">
+                    <td colSpan={4} className="py-4 text-center text-muted-foreground">
                       No customers found.
                     </td>
                   </tr>
@@ -64,8 +62,6 @@ export default async function CustomersPage() {
                     return (
                       <tr key={customer.id}>
                         <td className="py-3 px-4 font-medium">{customer.name}</td>
-                        <td className="py-3 px-4">{customer.phone || "-"}</td>
-                        <td className="py-3 px-4">{customer.address || "-"}</td>
                         <td className="py-3 px-4">{customer.invoices.length}</td>
                         <td className="py-3 px-4">₹{totalRevenue.toFixed(2)}</td>
                         <td className="py-3 px-4">

@@ -12,7 +12,9 @@ export async function getCompanySettings() {
     companyAddress: "",
     gstNumber: "",
     phone: "",
-    email: ""
+    email: "",
+    showTax: true,
+    taxRates: "0,5,10,20"
   };
 }
 
@@ -24,6 +26,8 @@ export async function updateCompanySettings(data: {
   gstNumber?: string;
   phone?: string;
   email?: string;
+  showTax: boolean;
+  taxRates: string;
 }) {
   try {
     const existing = await db.companySettings.findFirst();
@@ -37,6 +41,8 @@ export async function updateCompanySettings(data: {
           gstNumber: data.gstNumber,
           phone: data.phone,
           email: data.email,
+          showTax: data.showTax,
+          taxRates: data.taxRates,
         }
       });
     } else {
@@ -48,6 +54,8 @@ export async function updateCompanySettings(data: {
           gstNumber: data.gstNumber,
           phone: data.phone,
           email: data.email,
+          showTax: data.showTax,
+          taxRates: data.taxRates,
         }
       });
     }
