@@ -106,8 +106,23 @@ export default function CreateInvoice() {
     window.print();
   };
 
+  useEffect(() => {
+    const handleGlobalScroll = () => {
+      // Dispatch a mousedown event on body to trigger the select/popover close-on-click-outside behavior
+      const event = new MouseEvent('mousedown', {
+        bubbles: true,
+        cancelable: true,
+        view: window
+      });
+      document.body.dispatchEvent(event);
+    };
+
+    window.addEventListener('scroll', handleGlobalScroll, true);
+    return () => window.removeEventListener('scroll', handleGlobalScroll, true);
+  }, []);
+
   return (
-    <div className="flex h-full flex-col md:flex-row print:block">
+    <div className="relative md:absolute md:inset-0 flex flex-col md:flex-row print:relative print:block print:inset-auto">
       {/* LEFT: FORM */}
       <div className="w-full md:w-[450px] lg:w-[500px] shrink-0 p-6 overflow-y-auto border-r bg-white print:hidden">
         <div className="flex items-center justify-between mb-6">
@@ -174,36 +189,38 @@ export default function CreateInvoice() {
                       <Input {...form.register(`items.${index}.paymentMode` as const)} placeholder="e.g. Cash" />
                     </div>
                   </div>
-                  <div className="flex flex-row gap-3 items-end">
-                    <div className="flex-1 space-y-1">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 items-end">
+                    <div className="space-y-1">
                       <label className="text-xs font-medium text-neutral-500 ml-1">Price</label>
                       <Input type="number" {...form.register(`items.${index}.unitPrice` as const)} placeholder="0" />
                     </div>
-                    <div className="flex-1 space-y-1">
+                    <div className="space-y-1">
                       <label className="text-xs font-medium text-neutral-500 ml-1">Qty</label>
                       <Input type="number" {...form.register(`items.${index}.quantity` as const)} placeholder="1" />
                     </div>
-                    <div className="flex-1 space-y-1">
-                      <label className="text-xs font-medium text-neutral-500 ml-1">Discount (%)</label>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-neutral-500 ml-1 whitespace-nowrap">Discount (%)</label>
                       <Input type="number" {...form.register(`items.${index}.discount` as const)} placeholder="0" />
                     </div>
-                    <div className="flex-1 space-y-1">
-                      <label className="text-xs font-medium text-neutral-500 ml-1">Tax</label>
-                      <Select onValueChange={(v) => form.setValue(`items.${index}.tax`, Number(v))} defaultValue="0">
-                        <SelectTrigger>
-                          <SelectValue placeholder="Tax" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="0">0%</SelectItem>
-                          <SelectItem value="5">5%</SelectItem>
-                          <SelectItem value="10">10%</SelectItem>
-                          <SelectItem value="20">20%</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    <div className="flex items-end gap-2">
+                      <div className="flex-1 space-y-1">
+                        <label className="text-xs font-medium text-neutral-500 ml-1">Tax</label>
+                        <Select onValueChange={(v) => form.setValue(`items.${index}.tax`, Number(v))} defaultValue="0">
+                          <SelectTrigger>
+                            <SelectValue placeholder="Tax" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="0">0%</SelectItem>
+                            <SelectItem value="5">5%</SelectItem>
+                            <SelectItem value="10">10%</SelectItem>
+                            <SelectItem value="20">20%</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <Button type="button" variant="ghost" size="icon" className="text-red-500 hover:text-red-700 hover:bg-red-50 shrink-0 mb-0.5" onClick={() => remove(index)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
-                    <Button type="button" variant="ghost" size="icon" className="text-red-500 hover:text-red-700 hover:bg-red-50 shrink-0 mb-0.5" onClick={() => remove(index)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
                   </div>
                 </div>
               ))}

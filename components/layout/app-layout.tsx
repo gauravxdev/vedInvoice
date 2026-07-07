@@ -93,7 +93,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <span className="font-semibold">Invoice App</span>
             </div>
           </header>
-          <div className="flex-1 print:block">
+          <div className="flex-1 relative flex flex-col print:block">
             {children}
           </div>
         </main>
