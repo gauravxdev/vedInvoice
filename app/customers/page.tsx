@@ -19,8 +19,8 @@ export default async function CustomersPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="flex justify-between items-center mb-8">
+    <div className="p-4 md:p-8">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-8 gap-4">
         <h2 className="text-3xl font-bold tracking-tight">Customers</h2>
       </div>
 
@@ -36,8 +36,8 @@ export default async function CustomersPage() {
           <CardTitle>All Customers</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border">
-            <table className="w-full text-sm">
+          <div className="rounded-md border overflow-x-auto">
+            <table className="w-full text-sm min-w-[700px]">
               <thead className="bg-neutral-50 border-b">
                 <tr>
                   <th className="py-3 px-4 text-left font-medium">Name</th>

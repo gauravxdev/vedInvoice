@@ -26,7 +26,7 @@ export default async function InvoiceViewPage({ params }: { params: Promise<{ id
   };
 
   return (
-    <div className="p-8 h-full bg-neutral-50 flex justify-center">
+    <div className="p-4 md:p-8 h-full bg-neutral-50 overflow-x-auto">
       <InvoiceViewer invoice={invoice} companySettings={companySettings} />
     </div>
   );

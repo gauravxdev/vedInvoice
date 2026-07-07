@@ -35,7 +35,7 @@ export default async function Dashboard() {
   }
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <h2 className="text-3xl font-bold tracking-tight mb-8">Dashboard</h2>
 
       {dbError && (
@@ -100,7 +100,7 @@ export default async function Dashboard() {
                 <p className="text-sm text-muted-foreground">No recent invoices.</p>
               ) : (
                 invoices.map((invoice) => (
-                  <div key={invoice.id} className="flex items-center justify-between">
+                  <div key={invoice.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="space-y-1">
                       <p className="text-sm font-medium leading-none">{invoice.customer.name}</p>
                       <p className="text-sm text-muted-foreground">

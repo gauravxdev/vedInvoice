@@ -7,10 +7,14 @@ export const invoiceItemSchema = z.object({
   quantity: z.coerce.number().min(1),
   unitPrice: z.coerce.number().min(0),
   tax: z.coerce.number().min(0).default(0),
+  customerName: z.string().optional(),
+  deliveryBy: z.string().optional(),
+  paymentMode: z.string().optional(),
+  discount: z.coerce.number().min(0).max(100).default(0),
 });
 
 export const invoiceSchema = z.object({
-  customerName: z.string().min(1, "Customer name is required"),
+  customerName: z.string().optional(),
   customerEmail: z.string().email("Invalid email").optional().or(z.literal("")),
   customerPhone: z.string().optional(),
   customerAddress: z.string().optional(),

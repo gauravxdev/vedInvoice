@@ -45,6 +45,9 @@ model InvoiceItem {
   quantity    Int
   unitPrice   Float
   total       Float
+  customerName String?
+  deliveryBy   String?
+  paymentMode  String?
 }
 
 model CompanySettings {

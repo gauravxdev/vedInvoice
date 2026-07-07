@@ -6,22 +6,24 @@ import { revalidatePath } from "next/cache";
 
 export async function createInvoice(data: InvoiceFormValues) {
   try {
-    const subtotal = data.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
-    const tax = data.items.reduce((sum, item) => sum + item.quantity * item.unitPrice * (item.tax / 100), 0);
+    const subtotal = data.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice * (1 - (item.discount || 0) / 100)), 0);
+    const tax = data.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice * (1 - (item.discount || 0) / 100)) * (item.tax / 100), 0);
     const discountAmount = subtotal * (data.discount / 100);
     const total = subtotal + tax - discountAmount;
+
+    const primaryCustomerName = data.customerName || data.items[0]?.customerName || "Unknown Customer";
 
     // Get or create customer
     let customer = await db.customer.findFirst({
       where: {
-        name: data.customerName,
+        name: primaryCustomerName,
       }
     });
 
     if (!customer) {
       customer = await db.customer.create({
         data: {
-          name: data.customerName,
+          name: primaryCustomerName,
           phone: data.customerPhone,
           address: data.customerAddress,
         }
@@ -50,7 +52,9 @@ export async function createInvoice(data: InvoiceFormValues) {
             productName: item.productName,
             quantity: item.quantity,
             unitPrice: item.unitPrice,
-            total: item.quantity * item.unitPrice
+            total: item.quantity * item.unitPrice * (1 - (item.discount || 0) / 100),
+            customerName: item.customerName || data.customerName,
+            deliveryBy: item.deliveryBy || data.deliveryBy
           }))
         }
       }
