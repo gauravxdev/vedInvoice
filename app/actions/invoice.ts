@@ -73,7 +73,9 @@ export async function createInvoice(data: InvoiceFormValues) {
         deliveryBy: data.deliveryBy,
         items: {
           create: data.items.map(item => ({
+            productId: item.productId || null,
             productName: item.productName,
+            size: item.size || null,
             quantity: item.quantity,
             unitPrice: item.unitPrice,
             total: item.quantity * item.unitPrice,

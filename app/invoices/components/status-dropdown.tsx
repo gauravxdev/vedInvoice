@@ -13,7 +13,7 @@ export function StatusDropdown({ invoiceId, currentStatus }: { invoiceId: string
     startTransition(async () => {
       const res = await updateInvoiceStatus(invoiceId, newStatus);
       if (res.error) {
-        alert("Failed to update status");
+        console.error("Failed to update status:", res.error);
       }
     });
   };

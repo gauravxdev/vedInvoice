@@ -37,27 +37,38 @@ model Invoice {
 }
 
 model InvoiceItem {
-  id          String   @id @default(uuid())
-  invoiceId   String
-  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  productId   String?
-  productName String
-  quantity    Int
-  unitPrice   Float
-  total       Float
+  id           String   @id @default(uuid())
+  invoiceId    String
+  invoice      Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  productId    String?
+  productName  String
+  size         String?
+  quantity     Int
+  unitPrice    Float
+  total        Float
   customerName String?
   deliveryBy   String?
   paymentMode  String?
 }
 
+model Product {
+  id        String   @id @default(uuid())
+  name      String
+  size      String?
+  price     Float?   @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model CompanySettings {
-  id             String @id @default(uuid())
-  companyName    String
-  companyLogo    String?
-  companyAddress String?
-  gstNumber      String?
-  phone          String?
-  email          String?
-  showTax        Boolean @default(true)
-  taxRates       String  @default("0,5,10,20")
+  id               String  @id @default(uuid())
+  companyName      String
+  companyLogo      String?
+  companyAddress   String?
+  gstNumber        String?
+  phone            String?
+  email            String?
+  showTax          Boolean @default(true)
+  taxRates         String  @default("0,5,10,20")
+  deliveryPartners String? @default("Partner 1,Partner 2")
 }

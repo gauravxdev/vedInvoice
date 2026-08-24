@@ -4,6 +4,7 @@ export const invoiceItemSchema = z.object({
   id: z.string().optional(),
   productId: z.string().optional(),
   productName: z.string().min(1, "Product name is required"),
+  size: z.string().optional(),
   quantity: z.coerce.number().min(1),
   unitPrice: z.coerce.number().min(0),
   tax: z.coerce.number().min(0).default(0),
@@ -12,6 +13,14 @@ export const invoiceItemSchema = z.object({
   paymentMode: z.string().optional(),
   discount: z.coerce.number().min(0).max(100).default(0),
 });
+
+export const productFormSchema = z.object({
+  name: z.string().min(1, "Product name or model is required"),
+  size: z.string().optional(),
+  price: z.coerce.number().min(0).optional().default(0),
+});
+
+export type ProductFormValues = z.infer<typeof productFormSchema>;
 
 export const invoiceSchema = z.object({
   customerName: z.string().optional(),

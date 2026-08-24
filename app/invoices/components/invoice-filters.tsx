@@ -88,7 +88,6 @@ export function InvoiceFilters() {
                   setDate(format(selectedDate, "yyyy-MM-dd"));
                 }
               }}
-              initialFocus
             />
           </PopoverContent>
         </Popover>

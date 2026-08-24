@@ -16,3 +16,14 @@ export function formatIndianCurrency(num: number): string {
     return num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 }
+
+export function formatProductDisplay(productName?: string | null, size?: string | null): string {
+  if (!productName || !productName.trim()) return "-";
+  const trimmedName = productName.trim();
+  const trimmedSize = size?.trim();
+  
+  if (!trimmedSize) return trimmedName;
+  // If product name already contains the formatted size, avoid duplication
+  if (trimmedName.includes(`(${trimmedSize})`)) return trimmedName;
+  return `${trimmedName} (${trimmedSize})`;
+}

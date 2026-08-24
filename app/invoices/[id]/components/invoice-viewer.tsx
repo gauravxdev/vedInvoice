@@ -4,7 +4,7 @@ import { useRef, useEffect } from "react";
 import { format } from "date-fns";
 import { Download, ArrowLeft, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatIndianCurrency } from "@/lib/utils";
+import { formatIndianCurrency, formatProductDisplay } from "@/lib/utils";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
@@ -108,7 +108,7 @@ export default function InvoiceViewer({ invoice, companySettings }: { invoice: a
                 <tr key={i} className="h-0">
                   <td className="border border-neutral-300 py-3 px-3 text-center">{String(i + 1).padStart(2, '0')}</td>
                   <td className="border border-neutral-300 py-3 px-3 text-center">{item.customerName || invoice.customer?.name || "-"}</td>
-                  <td className="border border-neutral-300 py-3 px-3 font-medium text-center">{item.productName || "-"}</td>
+                  <td className="border border-neutral-300 py-3 px-3 font-medium text-center">{formatProductDisplay(item.productName, item.size)}</td>
                   <td className="border border-neutral-300 py-3 px-3 text-center whitespace-nowrap">{item.quantity}</td>
                   <td className="border border-neutral-300 py-3 px-3 text-center whitespace-nowrap">₹{formatIndianCurrency(Number(item.unitPrice || 0))}</td>
                   <td className="border border-neutral-300 py-3 px-3 text-center font-medium whitespace-nowrap">₹{formatIndianCurrency(Number(item.total || 0))}</td>

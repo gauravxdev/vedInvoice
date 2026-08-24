@@ -14,7 +14,8 @@ export async function getCompanySettings() {
     phone: "",
     email: "",
     showTax: true,
-    taxRates: "0,5,10,20"
+    taxRates: "0,5,10,20",
+    deliveryPartners: "Partner 1,Partner 2"
   };
 }
 
@@ -28,6 +29,7 @@ export async function updateCompanySettings(data: {
   email?: string;
   showTax: boolean;
   taxRates: string;
+  deliveryPartners?: string;
 }) {
   try {
     const existing = await db.companySettings.findFirst();
@@ -43,6 +45,7 @@ export async function updateCompanySettings(data: {
           email: data.email,
           showTax: data.showTax,
           taxRates: data.taxRates,
+          deliveryPartners: data.deliveryPartners,
         }
       });
     } else {
@@ -56,6 +59,7 @@ export async function updateCompanySettings(data: {
           email: data.email,
           showTax: data.showTax,
           taxRates: data.taxRates,
+          deliveryPartners: data.deliveryPartners,
         }
       });
     }
@@ -65,5 +69,34 @@ export async function updateCompanySettings(data: {
   } catch (error) {
     console.error("Failed to update settings", error);
     return { success: false, error: "Failed to save settings" };
+  }
+}
+
+export async function addDeliveryPartnerAction(partnerName: string) {
+  try {
+    const settings = await getCompanySettings();
+    const currentPartners = settings.deliveryPartners ? settings.deliveryPartners.split(",").filter(Boolean) : [];
+    if (!currentPartners.includes(partnerName)) {
+      currentPartners.push(partnerName);
+      
+      const existing = await db.companySettings.findFirst();
+      if (existing) {
+        await db.companySettings.update({
+          where: { id: existing.id },
+          data: {
+            deliveryPartners: currentPartners.join(",")
+          }
+        });
+      }
+      
+      revalidatePath("/delivery");
+      revalidatePath("/invoices/create");
+      revalidatePath("/settings");
+      return { success: true };
+    }
+    return { success: false, error: "Partner already exists" };
+  } catch (error) {
+    console.error("Failed to add partner", error);
+    return { success: false, error: "Failed to add partner" };
   }
 }

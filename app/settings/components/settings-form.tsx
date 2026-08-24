@@ -126,6 +126,82 @@ export default function SettingsForm({ initialData }: { initialData: any }) {
               <Input value={formData.companyAddress || ""} onChange={e => setFormData({...formData, companyAddress: e.target.value})} placeholder="e.g. L-208, Dilshad Garden, Delhi - 95" />
             </div>
 
+            {/* Delivery Partners Section */}
+            <div className="space-y-4 pt-4 border-t">
+              <div className="space-y-3 pt-2">
+                <Label>Manage Delivery Partners</Label>
+                <div className="grid gap-2 max-w-md">
+                  {(formData.deliveryPartners || "")
+                    .split(",")
+                    .filter(Boolean)
+                    .map((partner: string, idx: number) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <Input
+                          type="text"
+                          value={partner}
+                          onChange={(e) => {
+                            const newVal = e.target.value;
+                            const partners = (formData.deliveryPartners || "").split(",").filter(Boolean);
+                            partners[idx] = newVal;
+                            setFormData({ ...formData, deliveryPartners: partners.join(",") });
+                          }}
+                          className="flex-1"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-500 hover:text-red-700"
+                          onClick={() => {
+                            const partners = (formData.deliveryPartners || "").split(",").filter(Boolean);
+                            partners.splice(idx, 1);
+                            setFormData({ ...formData, deliveryPartners: partners.join(",") });
+                          }}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    ))}
+                </div>
+
+                <div className="flex gap-2 max-w-md mt-2">
+                  <Input
+                    type="text"
+                    placeholder="Add new delivery partner"
+                    id="new-delivery-partner"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const val = (e.currentTarget as HTMLInputElement).value;
+                        if (val !== "") {
+                          const partners = (formData.deliveryPartners || "").split(",").filter(Boolean);
+                          partners.push(val);
+                          setFormData({ ...formData, deliveryPartners: partners.join(",") });
+                          (e.currentTarget as HTMLInputElement).value = "";
+                        }
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      const input = document.getElementById("new-delivery-partner") as HTMLInputElement;
+                      const val = input?.value;
+                      if (val && val !== "") {
+                        const partners = (formData.deliveryPartners || "").split(",").filter(Boolean);
+                        partners.push(val);
+                        setFormData({ ...formData, deliveryPartners: partners.join(",") });
+                        input.value = "";
+                      }
+                    }}
+                  >
+                    Add
+                  </Button>
+                </div>
+              </div>
+            </div>
+
             {/* Tax Settings Section */}
             <div className="space-y-4 pt-4 border-t">
               <div className="flex items-center gap-2">

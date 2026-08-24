@@ -11,19 +11,24 @@ import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarIcon, Plus, Trash2, Printer, Download, Save, MapPin } from "lucide-react";
+import { CalendarIcon, Plus, Trash2, Printer, Download, Save, MapPin, AlertCircle, Loader2 } from "lucide-react";
 import { format } from "date-fns";
-import { cn, formatIndianCurrency } from "@/lib/utils";
+import { cn, formatIndianCurrency, formatProductDisplay } from "@/lib/utils";
 import { useRef } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 import { createInvoice } from "@/app/actions/invoice";
 import { getCompanySettings } from "@/app/actions/settings";
+import { getProducts } from "@/app/actions/products";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 
 export default function CreateInvoice() {
   const router = useRouter();
+  const [products, setProducts] = useState<any[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const [companySettings, setCompanySettings] = useState<any>({
     companyName: "PRINT SHAPEE",
     companyLogo: null,
@@ -38,6 +43,11 @@ export default function CreateInvoice() {
     getCompanySettings().then((res) => {
       if (res) {
         setCompanySettings(res);
+      }
+    });
+    getProducts().then((res) => {
+      if (res?.success && res.data) {
+        setProducts(res.data);
       }
     });
   }, []);
@@ -55,7 +65,7 @@ export default function CreateInvoice() {
       deliveryBy: "",
       discount: 0,
       notes: "",
-      items: [{ productName: "", quantity: 1, unitPrice: 0, tax: 0, customerName: "", deliveryBy: "", paymentMode: "", discount: 0 }],
+      items: [{ productName: "", size: "", quantity: 1, unitPrice: 0, tax: 0, customerName: "", deliveryBy: "", paymentMode: "", discount: 0 }],
     },
   });
 
@@ -91,15 +101,19 @@ export default function CreateInvoice() {
   const total = subtotal + tax - discountAmount;
 
   const onSubmit = async (data: InvoiceFormValues) => {
+    setFormError(null);
+    setIsSubmitting(true);
     try {
       const result = await createInvoice(data);
       if (result.success) {
         router.push("/invoices");
       } else {
-        alert(result.error);
+        setFormError(result.error || "Failed to create invoice");
       }
-    } catch (e) {
-      alert("Failed to create invoice");
+    } catch (e: any) {
+      setFormError(e?.message || "Failed to create invoice");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -117,7 +131,6 @@ export default function CreateInvoice() {
 
   useEffect(() => {
     const handleGlobalScroll = () => {
-      // Dispatch a mousedown event on body to trigger the select/popover close-on-click-outside behavior
       const event = new MouseEvent('mousedown', {
         bubbles: true,
         cancelable: true,
@@ -137,6 +150,13 @@ export default function CreateInvoice() {
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold tracking-tight">Invoice Detail</h2>
         </div>
+
+        {formError && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{formError}</AlertDescription>
+          </Alert>
+        )}
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <Card className="border-neutral-200 shadow-sm">
@@ -185,19 +205,92 @@ export default function CreateInvoice() {
                     </div>
                     <div className="space-y-1">
                       <label className="text-xs font-medium text-neutral-500 ml-1">Delivery Partner</label>
-                      <Input {...form.register(`items.${index}.deliveryBy` as const)} placeholder="e.g. Shyam" />
+                      <Input list={`delivery-partners-${index}`} {...form.register(`items.${index}.deliveryBy` as const)} placeholder="e.g. Shyam" />
+                      <datalist id={`delivery-partners-${index}`}>
+                        {(companySettings?.deliveryPartners || "")
+                          .split(",")
+                          .filter(Boolean)
+                          .map((partner: string) => (
+                            <option key={partner} value={partner} />
+                          ))}
+                      </datalist>
                     </div>
                   </div>
+
+                  {/* Product selection / custom name */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-medium text-neutral-500 ml-1">
+                        Product Name / Model No <span className="text-red-500">*</span>
+                      </label>
+                      {products.length > 0 && (
+                        <span className="text-[11px] text-neutral-400">Select below or type custom</span>
+                      )}
+                    </div>
+
+                    {products.length > 0 && (
+                      <div className="mb-1.5">
+                        <Select onValueChange={(selectedName) => {
+                          const selected = products.find(p => p.name === selectedName);
+                          if (selected) {
+                            form.setValue(`items.${index}.productName`, selected.name);
+                            if (selected.size) {
+                              form.setValue(`items.${index}.size`, selected.size);
+                            }
+                            if (selected.price && Number(selected.price) > 0) {
+                              form.setValue(`items.${index}.unitPrice`, Number(selected.price));
+                            }
+                          }
+                        }}>
+                          <SelectTrigger className="h-8 text-xs bg-white border-neutral-200">
+                            <SelectValue placeholder="⚡ Choose from Product Catalogue" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {products.map((p) => (
+                              <SelectItem key={p.id} value={p.name}>
+                                {p.name} {p.size ? `(${p.size})` : ''} {p.price ? `- ₹${p.price}` : ''}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    <Input 
+                      list={`products-datalist-${index}`} 
+                      {...form.register(`items.${index}.productName` as const)} 
+                      placeholder="e.g. SA-101 or iPhone" 
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        form.setValue(`items.${index}.productName`, val);
+                        const matched = products.find(p => p.name.toLowerCase() === val.toLowerCase());
+                        if (matched) {
+                          form.setValue(`items.${index}.productName`, matched.name);
+                          if (matched.size) form.setValue(`items.${index}.size`, matched.size);
+                          if (matched.price && Number(matched.price) > 0) form.setValue(`items.${index}.unitPrice`, Number(matched.price));
+                        }
+                      }}
+                    />
+                    <datalist id={`products-datalist-${index}`}>
+                      {products.map((p) => (
+                        <option key={p.id} value={p.name}>
+                          {p.size ? `${p.name} (${p.size})` : p.name} {p.price ? `- ₹${p.price}` : ''}
+                        </option>
+                      ))}
+                    </datalist>
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="w-full space-y-1">
-                      <label className="text-xs font-medium text-neutral-500 ml-1">Product Name Or Model No</label>
-                      <Input {...form.register(`items.${index}.productName` as const)} placeholder="e.g. iPhone" />
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-neutral-500 ml-1">Size (Optional)</label>
+                      <Input {...form.register(`items.${index}.size` as const)} placeholder="e.g. 65*41mm" />
                     </div>
                     <div className="space-y-1">
                       <label className="text-xs font-medium text-neutral-500 ml-1">Payment Mode</label>
                       <Input {...form.register(`items.${index}.paymentMode` as const)} placeholder="e.g. Cash" />
                     </div>
                   </div>
+
                   <div className={cn(
                     "grid gap-3 items-end",
                     companySettings?.showTax !== false
@@ -205,12 +298,12 @@ export default function CreateInvoice() {
                       : "grid-cols-2 sm:grid-cols-3"
                   )}>
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-neutral-500 ml-1">Price</label>
-                      <Input type="number" {...form.register(`items.${index}.unitPrice` as const)} placeholder="0" />
+                      <label className="text-xs font-medium text-neutral-500 ml-1">Custom Price (₹)</label>
+                      <Input type="number" step="any" {...form.register(`items.${index}.unitPrice` as const)} placeholder="0.00" />
                     </div>
                     <div className="space-y-1">
                       <label className="text-xs font-medium text-neutral-500 ml-1">Qty</label>
-                      <Input type="number" {...form.register(`items.${index}.quantity` as const)} placeholder="1" />
+                      <Input type="number" min="1" {...form.register(`items.${index}.quantity` as const)} placeholder="1" />
                     </div>
                     {companySettings?.showTax !== false ? (
                       <div className="space-y-1">
@@ -241,7 +334,7 @@ export default function CreateInvoice() {
                                 .split(",")
                                 .filter(Boolean)
                                 .map((rate: string) => (
-                                  <SelectItem key={rate} value={rate}>
+                                   <SelectItem key={rate} value={rate}>
                                     {rate}%
                                   </SelectItem>
                                 ))}
@@ -256,7 +349,7 @@ export default function CreateInvoice() {
                   </div>
                 </div>
               ))}
-              <Button type="button" variant="outline" size="sm" className="w-full text-green-600 hover:text-green-700 border-dashed" onClick={() => append({ productName: "", quantity: 1, unitPrice: 0, tax: 0, customerName: "", deliveryBy: "", paymentMode: "", discount: 0 })}>
+              <Button type="button" variant="outline" size="sm" className="w-full text-green-600 hover:text-green-700 border-dashed" onClick={() => append({ productName: "", size: "", quantity: 1, unitPrice: 0, tax: 0, customerName: "", deliveryBy: "", paymentMode: "", discount: 0 })}>
                 <Plus className="mr-2 h-4 w-4" />
                 Add New Line
               </Button>
@@ -274,7 +367,7 @@ export default function CreateInvoice() {
                   <Label>Status</Label>
                   <Select
                     value={form.watch("paymentStatus") || "Pending"}
-                    onValueChange={(value) => form.setValue("paymentStatus", value)}
+                    onValueChange={(value) => form.setValue("paymentStatus", value || "Pending")}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select Status" />
@@ -310,8 +403,15 @@ export default function CreateInvoice() {
                 <Save className="mr-2 h-4 w-4" />
                 Save Draft
               </Button>
-              <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={form.handleSubmit(onSubmit)}>
-                Save Invoice
+              <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={form.handleSubmit(onSubmit)} disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save Invoice"
+                )}
               </Button>
             </div>
           </div>
@@ -372,7 +472,7 @@ export default function CreateInvoice() {
                     <tr key={i} className="h-0">
                       <td className="border border-neutral-300 py-3 px-3 text-center">{String(i + 1).padStart(2, '0')}</td>
                       <td className="border border-neutral-300 py-3 px-3 text-center">{item.customerName || watchAll.customerName || "-"}</td>
-                      <td className="border border-neutral-300 py-3 px-3 font-medium text-center">{item.productName || "-"}</td>
+                      <td className="border border-neutral-300 py-3 px-3 font-medium text-center">{formatProductDisplay(item.productName, item.size)}</td>
                       <td className="border border-neutral-300 py-3 px-3 text-center whitespace-nowrap">{item.quantity}</td>
                       <td className="border border-neutral-300 py-3 px-3 text-center whitespace-nowrap">₹{formatIndianCurrency(Number(item.unitPrice || 0))}</td>
                       <td className="border border-neutral-300 py-3 px-3 text-center font-medium whitespace-nowrap">₹{formatIndianCurrency(Number(item.quantity || 0) * Number(item.unitPrice || 0))}</td>

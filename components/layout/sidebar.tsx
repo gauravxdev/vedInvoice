@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, FileText, Users, Settings, PlusCircle, PanelLeftClose, PanelLeft, Truck } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, Settings, PlusCircle, PanelLeftClose, PanelLeft, Truck, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/hooks/use-sidebar';
 
@@ -22,6 +22,11 @@ const routes = [
     label: 'Invoices',
     icon: FileText,
     href: '/invoices',
+  },
+  {
+    label: 'Product Catalogue',
+    icon: Package,
+    href: '/products',
   },
   {
     label: 'Customers',
