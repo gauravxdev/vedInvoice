@@ -71,4 +71,5 @@ model CompanySettings {
   showTax          Boolean @default(true)
   taxRates         String  @default("0,5,10,20")
   deliveryPartners String? @default("Partner 1,Partner 2")
+  paymentModes     String? @default("Cash,PhonePe,Paytm,GPay,Amazon Pay,Card")
 }

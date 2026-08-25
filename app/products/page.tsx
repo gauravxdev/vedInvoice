@@ -13,9 +13,16 @@ export default async function ProductsPage() {
   const dbError = !result.success && products.length === 0;
 
   const totalProducts = products.length;
-  const productsWithSize = products.filter(p => !!p.size).length;
-  const avgPrice = totalProducts > 0 
-    ? products.reduce((sum, p) => sum + (Number(p.price) || 0), 0) / totalProducts 
+  const totalVariants = products.reduce((acc, p) => acc + (p.variants && p.variants.length > 0 ? p.variants.length : (p.size ? 1 : 0)), 0);
+  
+  // Calculate average price across all variants
+  const allPrices = products.flatMap(p => 
+    p.variants && p.variants.length > 0 
+      ? p.variants.map(v => Number(v.price) || 0)
+      : [Number(p.price) || 0]
+  );
+  const avgPrice = allPrices.length > 0 
+    ? allPrices.reduce((sum, pr) => sum + pr, 0) / allPrices.length 
     : 0;
 
   return (
@@ -54,11 +61,11 @@ export default async function ProductsPage() {
 
         <Card className="shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Products with Size</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Sizes / Variants</CardTitle>
             <Tag className="h-4 w-4 text-neutral-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{productsWithSize}</div>
+            <div className="text-2xl font-bold">{totalVariants}</div>
             <p className="text-xs text-muted-foreground mt-1">Formats as Name (Size)</p>
           </CardContent>
         </Card>
@@ -70,7 +77,7 @@ export default async function ProductsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">₹{formatIndianCurrency(avgPrice)}</div>
-            <p className="text-xs text-muted-foreground mt-1">Customizable per customer</p>
+            <p className="text-xs text-muted-foreground mt-1">Across all product sizes</p>
           </CardContent>
         </Card>
       </div>

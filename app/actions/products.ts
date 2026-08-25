@@ -7,11 +7,17 @@ import fs from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
 
+export interface ProductVariant {
+  size: string;
+  price: number;
+}
+
 export interface ProductItem {
   id: string;
   name: string;
   size?: string | null;
   price?: number | null;
+  variants: ProductVariant[];
   createdAt: string;
   updatedAt: string;
 }
@@ -28,11 +34,42 @@ function ensureFileExists() {
   }
 }
 
+function normalizeProduct(p: any): ProductItem {
+  let variants: ProductVariant[] = [];
+  if (Array.isArray(p.variants) && p.variants.length > 0) {
+    variants = p.variants
+      .map((v: any) => ({
+        size: String(v.size || "").trim(),
+        price: Number(v.price) || 0,
+      }))
+      .filter((v: ProductVariant) => !!v.size);
+  }
+  if (variants.length === 0 && p.size) {
+    variants = [
+      {
+        size: String(p.size).trim(),
+        price: Number(p.price) || 0,
+      },
+    ];
+  }
+  const primaryVariant = variants[0];
+  return {
+    id: p.id,
+    name: p.name,
+    size: primaryVariant ? primaryVariant.size : p.size || null,
+    price: primaryVariant ? primaryVariant.price : Number(p.price) || 0,
+    variants,
+    createdAt: p.createdAt instanceof Date ? p.createdAt.toISOString() : String(p.createdAt || new Date().toISOString()),
+    updatedAt: p.updatedAt instanceof Date ? p.updatedAt.toISOString() : String(p.updatedAt || new Date().toISOString()),
+  };
+}
+
 function readLocalProducts(): ProductItem[] {
   try {
     ensureFileExists();
     const data = fs.readFileSync(PRODUCTS_FILE, "utf-8");
-    return JSON.parse(data || "[]");
+    const parsed = JSON.parse(data || "[]");
+    return Array.isArray(parsed) ? parsed.map(normalizeProduct) : [];
   } catch (err) {
     console.error("Error reading local products:", err);
     return [];
@@ -56,16 +93,17 @@ export async function getProducts(): Promise<{ success: boolean; data: ProductIt
           orderBy: { createdAt: "desc" },
         });
         if (dbProducts && Array.isArray(dbProducts)) {
+          const localProducts = readLocalProducts();
+          const localMap = new Map(localProducts.map(p => [p.id, p]));
           return {
             success: true,
-            data: dbProducts.map((p: any) => ({
-              id: p.id,
-              name: p.name,
-              size: p.size || null,
-              price: Number(p.price) || 0,
-              createdAt: p.createdAt instanceof Date ? p.createdAt.toISOString() : String(p.createdAt),
-              updatedAt: p.updatedAt instanceof Date ? p.updatedAt.toISOString() : String(p.updatedAt),
-            })),
+            data: dbProducts.map((p: any) => {
+              const matchedLocal = localMap.get(p.id);
+              return normalizeProduct({
+                ...p,
+                variants: matchedLocal?.variants || (p.size ? [{ size: p.size, price: Number(p.price) || 0 }] : []),
+              });
+            }),
           };
         }
       } catch (dbErr) {
@@ -89,11 +127,36 @@ export async function createProduct(data: ProductFormValues): Promise<{ success:
       return { success: false, error: "Product name or model is required." };
     }
 
+    // Parse and validate variants
+    let variants: ProductVariant[] = [];
+    if (Array.isArray(data.variants) && data.variants.length > 0) {
+      variants = data.variants
+        .map(v => ({
+          size: String(v.size || "").trim(),
+          price: Number(v.price) || 0,
+        }))
+        .filter(v => !!v.size);
+    } else if (data.size && data.size.trim()) {
+      variants = [
+        {
+          size: data.size.trim(),
+          price: Number(data.price) || 0,
+        },
+      ];
+    }
+
+    if (variants.length === 0 || !variants[0].size) {
+      return { success: false, error: "Size is compulsory. Please provide at least one size." };
+    }
+
+    const primaryVariant = variants[0];
+
     const newProduct: ProductItem = {
       id: randomUUID(),
       name: trimmedName,
-      size: data.size?.trim() || null,
-      price: Number(data.price) || 0,
+      size: primaryVariant.size,
+      price: primaryVariant.price,
+      variants,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -137,6 +200,30 @@ export async function updateProduct(id: string, data: ProductFormValues): Promis
       return { success: false, error: "Product name or model is required." };
     }
 
+    // Parse and validate variants
+    let variants: ProductVariant[] = [];
+    if (Array.isArray(data.variants) && data.variants.length > 0) {
+      variants = data.variants
+        .map(v => ({
+          size: String(v.size || "").trim(),
+          price: Number(v.price) || 0,
+        }))
+        .filter(v => !!v.size);
+    } else if (data.size && data.size.trim()) {
+      variants = [
+        {
+          size: data.size.trim(),
+          price: Number(data.price) || 0,
+        },
+      ];
+    }
+
+    if (variants.length === 0 || !variants[0].size) {
+      return { success: false, error: "Size is compulsory. Please provide at least one size." };
+    }
+
+    const primaryVariant = variants[0];
+
     // Attempt DB update
     if ((db as any)?.product?.update) {
       try {
@@ -144,8 +231,8 @@ export async function updateProduct(id: string, data: ProductFormValues): Promis
           where: { id },
           data: {
             name: trimmedName,
-            size: data.size?.trim() || null,
-            price: Number(data.price) || 0,
+            size: primaryVariant.size,
+            price: primaryVariant.price,
           },
         });
       } catch (dbErr) {
@@ -160,8 +247,9 @@ export async function updateProduct(id: string, data: ProductFormValues): Promis
       current[index] = {
         ...current[index],
         name: trimmedName,
-        size: data.size?.trim() || null,
-        price: Number(data.price) || 0,
+        size: primaryVariant.size,
+        price: primaryVariant.price,
+        variants,
         updatedAt: new Date().toISOString(),
       };
       writeLocalProducts(current);

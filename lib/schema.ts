@@ -14,10 +14,18 @@ export const invoiceItemSchema = z.object({
   discount: z.coerce.number().min(0).max(100).default(0),
 });
 
+export const productVariantSchema = z.object({
+  size: z.string().min(1, "Size is required"),
+  price: z.coerce.number().min(0).default(0),
+});
+
+export type ProductVariant = z.infer<typeof productVariantSchema>;
+
 export const productFormSchema = z.object({
   name: z.string().min(1, "Product name or model is required"),
   size: z.string().optional(),
-  price: z.coerce.number().min(0).optional().default(0),
+  price: z.coerce.number().min(0).optional(),
+  variants: z.array(productVariantSchema).min(1, "At least one size is required").optional(),
 });
 
 export type ProductFormValues = z.infer<typeof productFormSchema>;

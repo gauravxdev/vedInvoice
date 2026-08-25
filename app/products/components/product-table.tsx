@@ -7,24 +7,17 @@ import { format } from "date-fns";
 import { ProductActions } from "./product-actions";
 import { Search, Package, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-
-interface ProductItem {
-  id: string;
-  name: string;
-  size?: string | null;
-  price?: number | null;
-  createdAt: string | Date;
-}
+import { ProductItem } from "@/app/actions/products";
 
 export function ProductTable({ products }: { products: ProductItem[] }) {
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredProducts = products.filter(p => {
     const searchLower = searchTerm.toLowerCase();
-    return (
-      p.name.toLowerCase().includes(searchLower) ||
-      (p.size && p.size.toLowerCase().includes(searchLower))
-    );
+    const matchesName = p.name.toLowerCase().includes(searchLower);
+    const matchesLegacySize = p.size && p.size.toLowerCase().includes(searchLower);
+    const matchesVariants = p.variants?.some(v => v.size.toLowerCase().includes(searchLower));
+    return matchesName || matchesLegacySize || matchesVariants;
   });
 
   return (
@@ -50,9 +43,9 @@ export function ProductTable({ products }: { products: ProductItem[] }) {
             <tr>
               <th className="py-3 px-4 text-center w-[70px]">Sr No</th>
               <th className="py-3 px-4 text-left">Product / Model No</th>
-              <th className="py-3 px-4 text-left">Size</th>
+              <th className="py-3 px-4 text-left">Sizes Available</th>
               <th className="py-3 px-4 text-left">Invoice Render Preview</th>
-              <th className="py-3 px-4 text-left">Default Rate</th>
+              <th className="py-3 px-4 text-left">Default Rate(s)</th>
               <th className="py-3 px-4 text-left">Added On</th>
               <th className="py-3 px-4 text-right pr-6">Actions</th>
             </tr>
@@ -71,40 +64,81 @@ export function ProductTable({ products }: { products: ProductItem[] }) {
                 </td>
               </tr>
             ) : (
-              filteredProducts.map((product, index) => (
-                <tr key={product.id} className="hover:bg-neutral-50/70 transition-colors">
-                  <td className="py-3 px-4 text-center text-neutral-400 font-mono text-xs">
-                    {String(index + 1).padStart(2, "0")}
-                  </td>
-                  <td className="py-3 px-4 font-semibold text-neutral-900">
-                    {product.name}
-                  </td>
-                  <td className="py-3 px-4">
-                    {product.size ? (
-                      <Badge variant="secondary" className="font-mono text-xs font-normal">
-                        {product.size}
-                      </Badge>
-                    ) : (
-                      <span className="text-neutral-400 text-xs italic">No size</span>
-                    )}
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-neutral-100 text-neutral-800 font-mono text-xs border border-neutral-200/60">
-                      <Sparkles className="h-3 w-3 text-neutral-400" />
-                      <span>{formatProductDisplay(product.name, product.size)}</span>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4 font-medium text-neutral-900">
-                    ₹{formatIndianCurrency(Number(product.price || 0))}
-                  </td>
-                  <td className="py-3 px-4 text-xs text-neutral-500">
-                    {product.createdAt ? format(new Date(product.createdAt), "MMM dd, yyyy") : "-"}
-                  </td>
-                  <td className="py-3 px-4 text-right pr-6">
-                    <ProductActions product={product} />
-                  </td>
-                </tr>
-              ))
+              filteredProducts.map((product, index) => {
+                const variants = (product.variants && product.variants.length > 0)
+                  ? product.variants
+                  : (product.size ? [{ size: product.size, price: Number(product.price || 0) }] : []);
+
+                return (
+                  <tr key={product.id} className="hover:bg-neutral-50/70 transition-colors">
+                    <td className="py-3 px-4 text-center text-neutral-400 font-mono text-xs align-top pt-4">
+                      {String(index + 1).padStart(2, "0")}
+                    </td>
+                    <td className="py-3 px-4 font-semibold text-neutral-900 align-top pt-4">
+                      <div className="flex flex-col">
+                        <span>{product.name}</span>
+                        {variants.length > 1 && (
+                          <span className="text-[11px] font-normal text-neutral-400">
+                            {variants.length} size variants
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 align-top pt-4">
+                      <div className="flex flex-wrap gap-1.5 max-w-xs">
+                        {variants.length > 0 ? (
+                          variants.map((v, i) => (
+                            <Badge key={i} variant="secondary" className="font-mono text-xs font-normal">
+                              {v.size}
+                            </Badge>
+                          ))
+                        ) : (
+                          <span className="text-neutral-400 text-xs italic">No size</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 align-top pt-4">
+                      <div className="flex flex-col gap-1.5">
+                        {variants.length > 0 ? (
+                          variants.map((v, i) => (
+                            <div key={i} className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-neutral-100 text-neutral-800 font-mono text-xs border border-neutral-200/60 w-fit">
+                              <Sparkles className="h-3 w-3 text-neutral-400" />
+                              <span>{formatProductDisplay(product.name, v.size)}</span>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-neutral-100 text-neutral-800 font-mono text-xs border border-neutral-200/60 w-fit">
+                            <Sparkles className="h-3 w-3 text-neutral-400" />
+                            <span>{product.name}</span>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 font-medium text-neutral-900 align-top pt-4">
+                      <div className="flex flex-col gap-1">
+                        {variants.length > 0 ? (
+                          variants.map((v, i) => (
+                            <div key={i} className="text-xs">
+                              <span className="font-semibold text-neutral-900">₹{formatIndianCurrency(Number(v.price || 0))}</span>
+                              {variants.length > 1 && (
+                                <span className="text-neutral-400 text-[11px] ml-1 font-mono">({v.size})</span>
+                              )}
+                            </div>
+                          ))
+                        ) : (
+                          <span>₹{formatIndianCurrency(Number(product.price || 0))}</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 text-xs text-neutral-500 align-top pt-4">
+                      {product.createdAt ? format(new Date(product.createdAt), "MMM dd, yyyy") : "-"}
+                    </td>
+                    <td className="py-3 px-4 text-right pr-6 align-top pt-3">
+                      <ProductActions product={product} />
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>

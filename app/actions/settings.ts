@@ -3,9 +3,14 @@
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 
+const DEFAULT_PAYMENT_MODES = "Cash,PhonePe,Paytm,GPay,Amazon Pay,Card";
+
 export async function getCompanySettings() {
   const settings = await db.companySettings.findFirst();
-  return settings || {
+  return settings ? {
+    ...settings,
+    paymentModes: (settings as any).paymentModes || DEFAULT_PAYMENT_MODES,
+  } : {
     id: "new",
     companyName: "Your Company",
     companyLogo: null,
@@ -15,7 +20,8 @@ export async function getCompanySettings() {
     email: "",
     showTax: true,
     taxRates: "0,5,10,20",
-    deliveryPartners: "Partner 1,Partner 2"
+    deliveryPartners: "Partner 1,Partner 2",
+    paymentModes: DEFAULT_PAYMENT_MODES,
   };
 }
 
@@ -30,6 +36,7 @@ export async function updateCompanySettings(data: {
   showTax: boolean;
   taxRates: string;
   deliveryPartners?: string;
+  paymentModes?: string;
 }) {
   try {
     const existing = await db.companySettings.findFirst();
@@ -46,7 +53,8 @@ export async function updateCompanySettings(data: {
           showTax: data.showTax,
           taxRates: data.taxRates,
           deliveryPartners: data.deliveryPartners,
-        }
+          paymentModes: data.paymentModes || DEFAULT_PAYMENT_MODES,
+        } as any
       });
     } else {
       await db.companySettings.create({
@@ -60,7 +68,8 @@ export async function updateCompanySettings(data: {
           showTax: data.showTax,
           taxRates: data.taxRates,
           deliveryPartners: data.deliveryPartners,
-        }
+          paymentModes: data.paymentModes || DEFAULT_PAYMENT_MODES,
+        } as any
       });
     }
     revalidatePath("/settings");

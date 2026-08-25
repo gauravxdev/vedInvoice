@@ -4,7 +4,17 @@
     "name": "SA-51",
     "size": "25*50mm",
     "price": 240,
+    "variants": [
+      {
+        "size": "25*50mm",
+        "price": 240
+      },
+      {
+        "size": "33*55mm",
+        "price": 210
+      }
+    ],
     "createdAt": "2026-08-24T06:33:02.615Z",
-    "updatedAt": "2026-08-24T06:33:02.615Z"
+    "updatedAt": "2026-08-25T12:04:42.652Z"
   }
 ]

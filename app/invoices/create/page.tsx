@@ -230,15 +230,27 @@ export default function CreateInvoice() {
 
                     {products.length > 0 && (
                       <div className="mb-1.5">
-                        <Select onValueChange={(selectedName) => {
-                          const selected = products.find(p => p.name === selectedName);
-                          if (selected) {
-                            form.setValue(`items.${index}.productName`, selected.name);
-                            if (selected.size) {
-                              form.setValue(`items.${index}.size`, selected.size);
+                        <Select onValueChange={(val: string | null) => {
+                          if (!val) return;
+                          // val is formatted as JSON or index
+                          try {
+                            const parsed = JSON.parse(val) as { name?: string; size?: string; price?: number };
+                            if (parsed?.name) {
+                              form.setValue(`items.${index}.productName`, parsed.name);
+                              form.setValue(`items.${index}.size`, parsed.size || "");
+                              if (parsed.price && Number(parsed.price) > 0) {
+                                form.setValue(`items.${index}.unitPrice`, Number(parsed.price));
+                              }
                             }
-                            if (selected.price && Number(selected.price) > 0) {
-                              form.setValue(`items.${index}.unitPrice`, Number(selected.price));
+                          } catch {
+                            // Fallback
+                            const selected = products.find((p: any) => p.name === val);
+                            if (selected) {
+                              form.setValue(`items.${index}.productName`, selected.name);
+                              if (selected.size) form.setValue(`items.${index}.size`, selected.size);
+                              if (selected.price && Number(selected.price) > 0) {
+                                form.setValue(`items.${index}.unitPrice`, Number(selected.price));
+                              }
                             }
                           }
                         }}>
@@ -246,11 +258,24 @@ export default function CreateInvoice() {
                             <SelectValue placeholder="⚡ Choose from Product Catalogue" />
                           </SelectTrigger>
                           <SelectContent>
-                            {products.map((p) => (
-                              <SelectItem key={p.id} value={p.name}>
-                                {p.name} {p.size ? `(${p.size})` : ''} {p.price ? `- ₹${p.price}` : ''}
-                              </SelectItem>
-                            ))}
+                            {products.flatMap((p) => {
+                              const variants = p.variants && p.variants.length > 0
+                                ? p.variants
+                                : (p.size ? [{ size: p.size, price: Number(p.price || 0) }] : [{ size: '', price: Number(p.price || 0) }]);
+
+                              return variants.map((v: any, vIdx: number) => {
+                                const optionVal = JSON.stringify({
+                                  name: p.name,
+                                  size: v.size || "",
+                                  price: v.price || 0,
+                                });
+                                return (
+                                  <SelectItem key={`${p.id}-${vIdx}`} value={optionVal}>
+                                    {p.name}{v.size ? ` (${v.size})` : ''}{v.price ? ` - ₹${v.price}` : ''}
+                                  </SelectItem>
+                                );
+                              });
+                            })}
                           </SelectContent>
                         </Select>
                       </div>
@@ -266,17 +291,32 @@ export default function CreateInvoice() {
                         const matched = products.find(p => p.name.toLowerCase() === val.toLowerCase());
                         if (matched) {
                           form.setValue(`items.${index}.productName`, matched.name);
-                          if (matched.size) form.setValue(`items.${index}.size`, matched.size);
-                          if (matched.price && Number(matched.price) > 0) form.setValue(`items.${index}.unitPrice`, Number(matched.price));
+                          const firstVariant = matched.variants?.[0];
+                          if (firstVariant?.size) {
+                            form.setValue(`items.${index}.size`, firstVariant.size);
+                            if (firstVariant.price && Number(firstVariant.price) > 0) {
+                              form.setValue(`items.${index}.unitPrice`, Number(firstVariant.price));
+                            }
+                          } else if (matched.size) {
+                            form.setValue(`items.${index}.size`, matched.size);
+                            if (matched.price && Number(matched.price) > 0) {
+                              form.setValue(`items.${index}.unitPrice`, Number(matched.price));
+                            }
+                          }
                         }
                       }}
                     />
                     <datalist id={`products-datalist-${index}`}>
-                      {products.map((p) => (
-                        <option key={p.id} value={p.name}>
-                          {p.size ? `${p.name} (${p.size})` : p.name} {p.price ? `- ₹${p.price}` : ''}
-                        </option>
-                      ))}
+                      {products.flatMap((p) => {
+                        const variants = p.variants && p.variants.length > 0
+                          ? p.variants
+                          : (p.size ? [{ size: p.size, price: Number(p.price || 0) }] : [{ size: '', price: Number(p.price || 0) }]);
+                        return variants.map((v: any, vIdx: number) => (
+                          <option key={`${p.id}-${vIdx}`} value={p.name}>
+                            {p.name}{v.size ? ` (${v.size})` : ''}{v.price ? ` - ₹${v.price}` : ''}
+                          </option>
+                        ));
+                      })}
                     </datalist>
                   </div>
 
@@ -287,7 +327,24 @@ export default function CreateInvoice() {
                     </div>
                     <div className="space-y-1">
                       <label className="text-xs font-medium text-neutral-500 ml-1">Payment Mode</label>
-                      <Input {...form.register(`items.${index}.paymentMode` as const)} placeholder="e.g. Cash" />
+                      <Select
+                        value={form.watch(`items.${index}.paymentMode`) || undefined}
+                        onValueChange={(val: string | null) => form.setValue(`items.${index}.paymentMode`, val || "")}
+                      >
+                        <SelectTrigger className="h-9 text-xs bg-white border-neutral-200">
+                          <SelectValue placeholder="Select Payment Mode" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {((companySettings?.paymentModes || "Cash,PhonePe,Paytm,GPay,Amazon Pay,Card")
+                            .split(",")
+                            .map((s: string) => s.trim())
+                            .filter(Boolean) as string[]).map((mode: string) => (
+                            <SelectItem key={mode} value={mode}>
+                              {mode}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 
