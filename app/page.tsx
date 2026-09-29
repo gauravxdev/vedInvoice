@@ -3,8 +3,12 @@ import { IndianRupee, FileText, CheckCircle, Clock, TrendingUp, AlertCircle, Arr
 import { db } from '@/lib/db';
 import { format } from 'date-fns';
 import Link from 'next/link';
+import { auth } from '@clerk/nextjs/server';
 
 export default async function Dashboard() {
+  const { userId } = await auth();
+  const userFilter = userId ? { userId } : { userId: "__anonymous__" };
+
   let dbError = false;
   let totalInvoices = 0;
   let paidInvoices = 0;
@@ -16,16 +20,17 @@ export default async function Dashboard() {
 
   try {
     [totalInvoices, paidInvoices, pendingInvoices, invoices, pendingInvoicesList] = await Promise.all([
-      db.invoice.count(),
-      db.invoice.count({ where: { paymentStatus: 'Paid' } }),
-      db.invoice.count({ where: { paymentStatus: 'Pending' } }),
+      db.invoice.count({ where: userFilter }),
+      db.invoice.count({ where: { ...userFilter, paymentStatus: 'Paid' } }),
+      db.invoice.count({ where: { ...userFilter, paymentStatus: 'Pending' } }),
       db.invoice.findMany({
+        where: userFilter,
         orderBy: { createdAt: 'desc' },
         take: 5,
         include: { customer: true }
       }),
       db.invoice.findMany({
-        where: { paymentStatus: 'Pending' },
+        where: { ...userFilter, paymentStatus: 'Pending' },
         orderBy: { createdAt: 'desc' },
         take: 5,
         include: { customer: true }
@@ -33,12 +38,12 @@ export default async function Dashboard() {
     ]);
 
     const totalRevenue = await db.invoice.aggregate({
-      where: { paymentStatus: 'Paid' },
+      where: { ...userFilter, paymentStatus: 'Paid' },
       _sum: { total: true }
     });
     
     const pendingAmount = await db.invoice.aggregate({
-      where: { paymentStatus: 'Pending' },
+      where: { ...userFilter, paymentStatus: 'Pending' },
       _sum: { total: true }
     });
 

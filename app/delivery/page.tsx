@@ -2,18 +2,25 @@ import { db } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
 import { AddPartnerDialog } from "./components/add-partner-dialog";
+import { auth } from "@clerk/nextjs/server";
 
 export default async function DeliveryPage() {
+  const { userId } = await auth();
+  const userFilter = userId ? { userId } : { userId: "__anonymous__" };
+
   let deliveryPartners: any[] = [];
   let dbError = false;
 
   try {
     const [invoices, settings] = await Promise.all([
       db.invoice.findMany({
+        where: userFilter,
         include: { items: true },
         orderBy: { createdAt: "desc" },
       }),
-      db.companySettings.findFirst()
+      db.companySettings.findFirst({
+        where: userFilter,
+      })
     ]);
 
     const deliveryMap = new Map<string, { totalOrders: number, totalRevenue: number, lastInvoice: Date | null }>();

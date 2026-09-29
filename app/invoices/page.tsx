@@ -10,10 +10,14 @@ import { StatusDropdown } from "./components/status-dropdown";
 import { InvoiceFilters } from "./components/invoice-filters";
 import { Pagination } from "./components/pagination";
 import { InvoiceActionButtons } from "./components/invoice-action-buttons";
+import { auth } from "@clerk/nextjs/server";
 
 export default async function InvoicesPage(props: {
   searchParams?: Promise<{ query?: string; page?: string; date?: string }>;
 }) {
+  const { userId } = await auth();
+  const userFilter = userId ? { userId } : { userId: "__anonymous__" };
+
   const searchParams = await props.searchParams;
   const query = searchParams?.query || "";
   const currentPage = Number(searchParams?.page) || 1;
@@ -30,6 +34,7 @@ export default async function InvoicesPage(props: {
   try {
     // 1. Fetch summary stats
     const allInvoices = await db.invoice.findMany({
+      where: userFilter,
       select: { paymentStatus: true }
     });
     totalInvoicesCount = allInvoices.length;
@@ -37,7 +42,7 @@ export default async function InvoicesPage(props: {
     pendingInvoicesCount = totalInvoicesCount - paidInvoicesCount;
 
     // 2. Build where clause for filtering
-    const where: any = {};
+    const where: any = { ...userFilter };
     if (query) {
       where.invoiceNumber = {
         contains: query,

@@ -2,11 +2,14 @@
 
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { auth } from "@clerk/nextjs/server";
 
 const DEFAULT_PAYMENT_MODES = "Cash,PhonePe,Paytm,GPay,Amazon Pay,Card";
 
 export async function getCompanySettings() {
-  const settings = await db.companySettings.findFirst();
+  const { userId } = await auth();
+  const settings = userId ? await db.companySettings.findFirst({ where: { userId } }) : null;
+
   return settings ? {
     ...settings,
     paymentModes: (settings as any).paymentModes || DEFAULT_PAYMENT_MODES,
@@ -39,7 +42,10 @@ export async function updateCompanySettings(data: {
   paymentModes?: string;
 }) {
   try {
-    const existing = await db.companySettings.findFirst();
+    const { userId } = await auth();
+    if (!userId) return { success: false, error: "Unauthorized" };
+
+    const existing = await db.companySettings.findFirst({ where: { userId } });
     if (existing) {
       await db.companySettings.update({
         where: { id: existing.id },
@@ -59,6 +65,7 @@ export async function updateCompanySettings(data: {
     } else {
       await db.companySettings.create({
         data: {
+          userId,
           companyName: data.companyName,
           companyLogo: data.companyLogo,
           companyAddress: data.companyAddress,
@@ -83,16 +90,27 @@ export async function updateCompanySettings(data: {
 
 export async function addDeliveryPartnerAction(partnerName: string) {
   try {
+    const { userId } = await auth();
+    if (!userId) return { success: false, error: "Unauthorized" };
+
     const settings = await getCompanySettings();
     const currentPartners = settings.deliveryPartners ? settings.deliveryPartners.split(",").filter(Boolean) : [];
     if (!currentPartners.includes(partnerName)) {
       currentPartners.push(partnerName);
       
-      const existing = await db.companySettings.findFirst();
+      const existing = await db.companySettings.findFirst({ where: { userId } });
       if (existing) {
         await db.companySettings.update({
           where: { id: existing.id },
           data: {
+            deliveryPartners: currentPartners.join(",")
+          }
+        });
+      } else {
+        await db.companySettings.create({
+          data: {
+            userId,
+            companyName: "Your Company",
             deliveryPartners: currentPartners.join(",")
           }
         });

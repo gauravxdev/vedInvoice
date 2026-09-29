@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import fs from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
+import { auth } from "@clerk/nextjs/server";
 
 export interface ProductVariant {
   size: string;
@@ -59,17 +60,18 @@ function normalizeProduct(p: any): ProductItem {
     size: primaryVariant ? primaryVariant.size : p.size || null,
     price: primaryVariant ? primaryVariant.price : Number(p.price) || 0,
     variants,
-    createdAt: p.createdAt instanceof Date ? p.createdAt.toISOString() : String(p.createdAt || new Date().toISOString()),
-    updatedAt: p.updatedAt instanceof Date ? p.updatedAt.toISOString() : String(p.updatedAt || new Date().toISOString()),
+    createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : new Date().toISOString(),
+    updatedAt: p.updatedAt ? new Date(p.updatedAt).toISOString() : new Date().toISOString(),
   };
 }
 
 function readLocalProducts(): ProductItem[] {
   try {
     ensureFileExists();
-    const data = fs.readFileSync(PRODUCTS_FILE, "utf-8");
-    const parsed = JSON.parse(data || "[]");
-    return Array.isArray(parsed) ? parsed.map(normalizeProduct) : [];
+    const raw = fs.readFileSync(PRODUCTS_FILE, "utf-8");
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map(normalizeProduct);
   } catch (err) {
     console.error("Error reading local products:", err);
     return [];
@@ -85,6 +87,10 @@ function writeLocalProducts(products: ProductItem[]) {
   }
 }
 
+/**
+ * Returns all products in the catalogue.
+ * Shared globally so any authenticated account can view and use standard products.
+ */
 export async function getProducts(): Promise<{ success: boolean; data: ProductItem[]; error?: string }> {
   try {
     if ((db as any)?.product?.findMany) {
@@ -122,6 +128,11 @@ export async function getProducts(): Promise<{ success: boolean; data: ProductIt
 
 export async function createProduct(data: ProductFormValues): Promise<{ success: boolean; data?: ProductItem; error?: string }> {
   try {
+    const { userId } = await auth();
+    if (!userId) {
+      return { success: false, error: "Unauthorized" };
+    }
+
     const trimmedName = data.name.trim();
     if (!trimmedName) {
       return { success: false, error: "Product name or model is required." };
@@ -195,6 +206,11 @@ export async function createProduct(data: ProductFormValues): Promise<{ success:
 
 export async function updateProduct(id: string, data: ProductFormValues): Promise<{ success: boolean; data?: ProductItem; error?: string }> {
   try {
+    const { userId } = await auth();
+    if (!userId) {
+      return { success: false, error: "Unauthorized" };
+    }
+
     const trimmedName = data.name.trim();
     if (!trimmedName) {
       return { success: false, error: "Product name or model is required." };
@@ -266,6 +282,11 @@ export async function updateProduct(id: string, data: ProductFormValues): Promis
 
 export async function deleteProduct(id: string): Promise<{ success: boolean; error?: string }> {
   try {
+    const { userId } = await auth();
+    if (!userId) {
+      return { success: false, error: "Unauthorized" };
+    }
+
     // Attempt DB delete
     if ((db as any)?.product?.delete) {
       try {

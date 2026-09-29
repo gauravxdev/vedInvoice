@@ -3,11 +3,15 @@
 import { db } from "@/lib/db";
 import { InvoiceFormValues } from "@/lib/schema";
 import { revalidatePath } from "next/cache";
+import { auth } from "@clerk/nextjs/server";
 
 export async function getInvoiceById(id: string) {
   try {
-    const invoice = await db.invoice.findUnique({
-      where: { id },
+    const { userId } = await auth();
+    if (!userId) return null;
+
+    const invoice = await db.invoice.findFirst({
+      where: { id, userId },
       include: {
         customer: true,
         items: true,
@@ -22,7 +26,10 @@ export async function getInvoiceById(id: string) {
 
 export async function createInvoice(data: InvoiceFormValues) {
   try {
-    const settings = await db.companySettings.findFirst();
+    const { userId } = await auth();
+    if (!userId) return { success: false, error: "Unauthorized" };
+
+    const settings = await db.companySettings.findFirst({ where: { userId } });
     const showTax = settings ? settings.showTax : true;
     const subtotal = data.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
     const tax = showTax 
@@ -37,16 +44,18 @@ export async function createInvoice(data: InvoiceFormValues) {
 
     const primaryCustomerName = data.customerName || data.items[0]?.customerName || "Unknown Customer";
 
-    // Get or create customer
+    // Get or create customer for this user
     let customer = await db.customer.findFirst({
       where: {
         name: primaryCustomerName,
+        userId,
       }
     });
 
     if (!customer) {
       customer = await db.customer.create({
         data: {
+          userId,
           name: primaryCustomerName,
           phone: data.customerPhone,
           address: data.customerAddress,
@@ -54,13 +63,14 @@ export async function createInvoice(data: InvoiceFormValues) {
       });
     }
 
-    // Generate Invoice Number
-    const count = await db.invoice.count();
+    // Generate Invoice Number scoped to this user
+    const count = await db.invoice.count({ where: { userId } });
     const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
     const invoiceNumber = `INV-${new Date().getFullYear()}-${String(count + 1).padStart(4, '0')}-${randomSuffix}`;
 
     const invoice = await db.invoice.create({
       data: {
+        userId,
         invoiceNumber,
         customerId: customer.id,
         invoiceDate: data.invoiceDate,
@@ -99,8 +109,11 @@ export async function createInvoice(data: InvoiceFormValues) {
 
 export async function updateInvoiceStatus(invoiceId: string, status: string) {
   try {
-    await db.invoice.update({
-      where: { id: invoiceId },
+    const { userId } = await auth();
+    if (!userId) return { success: false, error: "Unauthorized" };
+
+    await db.invoice.updateMany({
+      where: { id: invoiceId, userId },
       data: { paymentStatus: status },
     });
     revalidatePath("/invoices");

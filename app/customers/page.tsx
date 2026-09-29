@@ -1,15 +1,22 @@
 import { db } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
+import { auth } from "@clerk/nextjs/server";
 
 export default async function CustomersPage() {
+  const { userId } = await auth();
+  const userFilter = userId ? { userId } : { userId: "__anonymous__" };
+
   let customers: any[] = [];
   let dbError = false;
 
   try {
     customers = await db.customer.findMany({
+      where: userFilter,
       include: {
-        invoices: true,
+        invoices: {
+          where: userFilter,
+        },
       },
       orderBy: { createdAt: "desc" },
     });

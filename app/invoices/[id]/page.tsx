@@ -1,11 +1,17 @@
 import { db } from "@/lib/db";
 import { notFound } from "next/navigation";
 import InvoiceViewer from "./components/invoice-viewer";
+import { auth } from "@clerk/nextjs/server";
 
 export default async function InvoiceViewPage({ params }: { params: Promise<{ id: string }> }) {
+  const { userId } = await auth();
+  if (!userId) {
+    notFound();
+  }
+
   const resolvedParams = await params;
-  const invoice = await db.invoice.findUnique({
-    where: { id: resolvedParams.id },
+  const invoice = await db.invoice.findFirst({
+    where: { id: resolvedParams.id, userId },
     include: {
       customer: true,
       items: true,
@@ -16,8 +22,7 @@ export default async function InvoiceViewPage({ params }: { params: Promise<{ id
     notFound();
   }
 
-  // We should ideally fetch the company settings too
-  const companySettings = await db.companySettings.findFirst() || {
+  const companySettings = await db.companySettings.findFirst({ where: { userId } }) || {
     companyName: "Your Company",
     email: "",
     phone: "",

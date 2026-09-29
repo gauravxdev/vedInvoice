@@ -1,10 +1,14 @@
 "use client";
 
 import * as React from "react";
+import { usePathname } from "next/navigation";
+
 import { Sidebar, SidebarToggle } from '@/components/layout/sidebar';
 import { SidebarProvider, useSidebar } from '@/hooks/use-sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
+import { SignInButton, SignUpButton, Show, UserButton } from '@clerk/nextjs';
+
 
 
 function MobileSidebar() {
@@ -76,6 +80,13 @@ function SidebarTrigger() {
 }
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isAuthPage = pathname?.startsWith('/sign-in') || pathname?.startsWith('/sign-up');
+
+  if (isAuthPage) {
+    return <>{children}</>;
+  }
+
   return (
     <SidebarProvider>
       <div className="h-screen flex bg-neutral-50 overflow-hidden print:h-auto print:overflow-visible print:bg-white">
@@ -84,13 +95,32 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
         <MobileSidebar />
         <main className="flex-1 flex flex-col overflow-y-auto print:overflow-visible print:block">
-          <header className="flex items-center p-4 border-b border-neutral-200 bg-white print:hidden">
-            <SidebarTrigger />
-            <div className="ml-3 flex items-center gap-2 md:hidden">
-              <div className="h-7 w-7 bg-black text-white flex items-center justify-center rounded-lg font-bold text-sm">
-                I
+          <header className="flex items-center justify-between p-4 border-b border-neutral-200 bg-white print:hidden">
+            <div className="flex items-center">
+              <SidebarTrigger />
+              <div className="ml-3 flex items-center gap-2 md:hidden">
+                <div className="h-7 w-7 bg-black text-white flex items-center justify-center rounded-lg font-bold text-sm">
+                  I
+                </div>
+                <span className="font-semibold">Invoice App</span>
               </div>
-              <span className="font-semibold">Invoice App</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <Show when="signed-out">
+                <SignInButton mode="modal">
+                  <button className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition px-3 py-1.5 rounded-md hover:bg-neutral-100 cursor-pointer">
+                    Sign In
+                  </button>
+                </SignInButton>
+                <SignUpButton mode="modal">
+                  <button className="bg-black text-white rounded-lg font-medium text-sm h-9 px-4 hover:bg-neutral-800 transition cursor-pointer">
+                    Sign Up
+                  </button>
+                </SignUpButton>
+              </Show>
+              <Show when="signed-in">
+                <UserButton />
+              </Show>
             </div>
           </header>
           <div className="flex-1 relative flex flex-col print:block">

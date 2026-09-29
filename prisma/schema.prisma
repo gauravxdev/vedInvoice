@@ -10,16 +10,20 @@ datasource db {
 
 model Customer {
   id        String    @id @default(uuid())
+  userId    String?
   name      String
   phone     String?
   address   String?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   invoices  Invoice[]
+
+  @@index([userId])
 }
 
 model Invoice {
   id            String        @id @default(uuid())
+  userId        String?
   invoiceNumber String        @unique
   customerId    String
   customer      Customer      @relation(fields: [customerId], references: [id])
@@ -34,6 +38,8 @@ model Invoice {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   items         InvoiceItem[]
+
+  @@index([userId])
 }
 
 model InvoiceItem {
@@ -62,6 +68,7 @@ model Product {
 
 model CompanySettings {
   id               String  @id @default(uuid())
+  userId           String?
   companyName      String
   companyLogo      String?
   companyAddress   String?
@@ -72,4 +79,6 @@ model CompanySettings {
   taxRates         String  @default("0,5,10,20")
   deliveryPartners String? @default("Partner 1,Partner 2")
   paymentModes     String? @default("Cash,PhonePe,Paytm,GPay,Amazon Pay,Card")
+
+  @@index([userId])
 }

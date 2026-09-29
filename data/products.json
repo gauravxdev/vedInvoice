@@ -1,5 +1,281 @@
 [
   {
+    "id": "a052e7bb-258f-4955-92a5-72a661c42eb0",
+    "name": "SA-68",
+    "size": "23mm*59mm",
+    "price": 700,
+    "variants": [
+      {
+        "size": "23mm*59mm",
+        "price": 700
+      }
+    ],
+    "createdAt": "2026-09-29T09:54:49.240Z",
+    "updatedAt": "2026-09-29T09:54:49.240Z"
+  },
+  {
+    "id": "6d48ef65-b697-4cd3-adc5-aa9c9c202f8f",
+    "name": "SA-67",
+    "size": "60*20mm",
+    "price": 500,
+    "variants": [
+      {
+        "size": "60*20mm",
+        "price": 500
+      }
+    ],
+    "createdAt": "2026-09-29T09:54:32.408Z",
+    "updatedAt": "2026-09-29T09:54:32.408Z"
+  },
+  {
+    "id": "bdbf5ff3-9e63-4523-8bf0-d01924f74490",
+    "name": "SA-66",
+    "size": "30mm*30mm",
+    "price": 600,
+    "variants": [
+      {
+        "size": "30mm*30mm",
+        "price": 600
+      },
+      {
+        "size": "25mm*50mm",
+        "price": 600
+      }
+    ],
+    "createdAt": "2026-09-29T09:54:03.274Z",
+    "updatedAt": "2026-09-29T09:54:03.274Z"
+  },
+  {
+    "id": "df71e751-ac2d-4631-9f9a-fae887e6d534",
+    "name": "SA-65",
+    "size": "30mm*30mm",
+    "price": 3600,
+    "variants": [
+      {
+        "size": "30mm*30mm",
+        "price": 3600
+      }
+    ],
+    "createdAt": "2026-09-29T09:53:04.887Z",
+    "updatedAt": "2026-09-29T09:53:04.887Z"
+  },
+  {
+    "id": "fbec61aa-213d-4b72-a5ed-ac8214d01d82",
+    "name": "SA-64",
+    "size": "Stamp",
+    "price": 120,
+    "variants": [
+      {
+        "size": "Stamp",
+        "price": 120
+      }
+    ],
+    "createdAt": "2026-09-29T09:52:31.888Z",
+    "updatedAt": "2026-09-29T09:52:31.888Z"
+  },
+  {
+    "id": "7afc3c33-97b1-4305-b48b-c81719a80d23",
+    "name": "SA-63",
+    "size": "30mm*55mm",
+    "price": 950,
+    "variants": [
+      {
+        "size": "30mm*55mm",
+        "price": 950
+      }
+    ],
+    "createdAt": "2026-09-29T09:52:05.194Z",
+    "updatedAt": "2026-09-29T09:52:05.194Z"
+  },
+  {
+    "id": "ae2ef19b-31d9-423a-9c2e-5e75966c5e2e",
+    "name": "SA-62",
+    "size": "18mm*47mm",
+    "price": 700,
+    "variants": [
+      {
+        "size": "18mm*47mm",
+        "price": 700
+      }
+    ],
+    "createdAt": "2026-09-29T09:51:34.106Z",
+    "updatedAt": "2026-09-29T09:51:34.106Z"
+  },
+  {
+    "id": "133d15c2-5b8d-435d-af9a-7f6e5507aad7",
+    "name": "SA-61",
+    "size": "48mm*55mm",
+    "price": 600,
+    "variants": [
+      {
+        "size": "48mm*55mm",
+        "price": 600
+      }
+    ],
+    "createdAt": "2026-09-29T09:50:59.105Z",
+    "updatedAt": "2026-09-29T09:50:59.105Z"
+  },
+  {
+    "id": "16e31fb4-7a48-4968-8156-af86fce16a47",
+    "name": "SA-60",
+    "size": "30mm*30mm",
+    "price": 240,
+    "variants": [
+      {
+        "size": "30mm*30mm",
+        "price": 240
+      },
+      {
+        "size": "25mm*65mm",
+        "price": 240
+      }
+    ],
+    "createdAt": "2026-09-29T09:50:27.352Z",
+    "updatedAt": "2026-09-29T09:50:27.352Z"
+  },
+  {
+    "id": "12696767-bfe2-4bc9-a424-5e89c88e7909",
+    "name": "SA-59",
+    "size": "3mm Font Hight (29 Mar 2021)",
+    "price": 200,
+    "variants": [
+      {
+        "size": "3mm Font Hight (29 Mar 2021)",
+        "price": 200
+      },
+      {
+        "size": "3mm Font Hight (22 Mar 2021)",
+        "price": 500
+      }
+    ],
+    "createdAt": "2026-09-29T09:48:12.426Z",
+    "updatedAt": "2026-09-29T09:49:09.088Z"
+  },
+  {
+    "id": "20649f39-9697-4880-afc1-cb8c773e5cdc",
+    "name": "SA-58",
+    "size": "50mm*75mm",
+    "price": 600,
+    "variants": [
+      {
+        "size": "50mm*75mm",
+        "price": 600
+      }
+    ],
+    "createdAt": "2026-09-29T09:47:24.882Z",
+    "updatedAt": "2026-09-29T09:47:24.882Z"
+  },
+  {
+    "id": "e538c681-509f-414f-b6c5-e152a6d5e4ad",
+    "name": "SA-57",
+    "size": "34mm*68mm",
+    "price": 300,
+    "variants": [
+      {
+        "size": "34mm*68mm",
+        "price": 300
+      }
+    ],
+    "createdAt": "2026-09-29T09:47:04.537Z",
+    "updatedAt": "2026-09-29T09:47:04.537Z"
+  },
+  {
+    "id": "3c3f247f-c9b6-4b72-92cd-b3070d296112",
+    "name": "SA-56",
+    "size": "30mm*30mm",
+    "price": 700,
+    "variants": [
+      {
+        "size": "30mm*30mm",
+        "price": 700
+      }
+    ],
+    "createdAt": "2026-09-29T09:46:42.378Z",
+    "updatedAt": "2026-09-29T09:46:42.378Z"
+  },
+  {
+    "id": "0b072e47-e253-4df4-8bf6-d7e5f40139f4",
+    "name": "SA-55",
+    "size": "22mm*55mm",
+    "price": 500,
+    "variants": [
+      {
+        "size": "22mm*55mm",
+        "price": 500
+      }
+    ],
+    "createdAt": "2026-09-29T09:45:58.963Z",
+    "updatedAt": "2026-09-29T09:45:58.963Z"
+  },
+  {
+    "id": "5d2409fe-5820-435c-ad5b-43f608fe191f",
+    "name": "SA-54",
+    "size": "30mm*30mm",
+    "price": 300,
+    "variants": [
+      {
+        "size": "30mm*30mm",
+        "price": 300
+      }
+    ],
+    "createdAt": "2026-09-29T09:45:34.878Z",
+    "updatedAt": "2026-09-29T09:45:34.878Z"
+  },
+  {
+    "id": "78621518-f94f-410a-bf58-589cdde68aa9",
+    "name": "SA-53",
+    "size": "25mm*50mm",
+    "price": 300,
+    "variants": [
+      {
+        "size": "25mm*50mm",
+        "price": 300
+      },
+      {
+        "size": "25mm*65mm",
+        "price": 340
+      }
+    ],
+    "createdAt": "2026-09-29T09:45:13.590Z",
+    "updatedAt": "2026-09-29T09:45:13.590Z"
+  },
+  {
+    "id": "3d18e65f-763f-47b0-9fad-99f7b417ef9b",
+    "name": "SA-52",
+    "size": "30mm*30mm",
+    "price": 240,
+    "variants": [
+      {
+        "size": "30mm*30mm",
+        "price": 240
+      },
+      {
+        "size": "40mm",
+        "price": 260
+      }
+    ],
+    "createdAt": "2026-09-29T09:44:33.197Z",
+    "updatedAt": "2026-09-29T09:44:33.197Z"
+  },
+  {
+    "id": "bf4ca902-e181-44e9-9c55-cfcdf8067d8b",
+    "name": "SA-51",
+    "size": "25mm*50mm",
+    "price": 240,
+    "variants": [
+      {
+        "size": "25mm*50mm",
+        "price": 240
+      },
+      {
+        "size": "25mm*63.5mm",
+        "price": 260
+      }
+    ],
+    "createdAt": "2026-09-29T09:43:07.811Z",
+    "updatedAt": "2026-09-29T09:43:07.811Z"
+  },
+  {
     "id": "6c271da6-3bda-446b-bab8-a1abf7a9b177",
     "name": "SA-51",
     "size": "25*50mm",

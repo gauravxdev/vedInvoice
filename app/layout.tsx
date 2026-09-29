@@ -3,6 +3,7 @@ import './globals.css';
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
 import AppLayout from '@/components/layout/app-layout';
+import { ClerkProvider } from '@clerk/nextjs';
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
@@ -14,7 +15,12 @@ export const metadata: Metadata = {
 export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
     <html lang="en" className={cn("font-sans", geist.variable)}>
-      <body suppressHydrationWarning><AppLayout>{children}</AppLayout></body>
+      <body suppressHydrationWarning>
+        <ClerkProvider>
+          <AppLayout>{children}</AppLayout>
+        </ClerkProvider>
+      </body>
     </html>
   );
 }
+
